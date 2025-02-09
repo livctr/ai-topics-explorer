@@ -1,5 +1,7 @@
 *.env
 
+data/
+
 # Below is copied from https://github.com/github/gitignore/blob/main/Node.gitignore
 
 # Logs
