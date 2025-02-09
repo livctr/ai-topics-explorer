@@ -1,16 +1,16 @@
-INSERT INTO topic (id, name, description, parent_id, level) VALUES
-(1, 'Computer Science', NULL, NULL, 1),
-  (2, 'Artificial Intelligence', 'Study of intelligent agents and learning systems.', 1, 2),
-    (3, 'Machine Learning', 'Enabling computers to learn from data.', 2, 3),
-      (4, 'Neural Networks', 'Modeling complex patterns using layers of neurons.', 3, 4),
-      (5, 'Decision Trees', 'Tree-structured models for decision making.', 3, 4),
-    (6, 'Natural Language Processing', 'Understanding and generating human language.', 2, 3),
-      (7, 'Sentiment Analysis', 'Determining sentiment in text.', 6, 4),
-      (8, 'Text Generation', 'AI-based text generation models.', 6, 4),
-  (9, 'Cybersecurity', 'Protecting digital systems from threats.', 1, 2),
-    (10, 'Cryptography', 'Securing communication using encryption.', 9, 3),
-      (11, 'Quantum Cryptography', 'Using quantum mechanics for encryption.', 10, 4),
-      (12, 'Public Key Infrastructure', 'Managing cryptographic keys.', 10, 4);
+INSERT INTO topic (id, name, description, parent_id, level, is_leaf) VALUES
+(1, 'Computer Science', NULL, NULL, 1, false),
+  (2, 'Artificial Intelligence', 'Study of intelligent agents and learning systems.', 1, 2, false),
+    (3, 'Machine Learning', 'Enabling computers to learn from data.', 2, 3, false),
+      (4, 'Neural Networks', 'Modeling complex patterns using layers of neurons.', 3, 4, true),
+      (5, 'Decision Trees', 'Tree-structured models for decision making.', 3, 4, true),
+    (6, 'Natural Language Processing', 'Understanding and generating human language.', 2, 3, false),
+      (7, 'Sentiment Analysis', 'Determining sentiment in text.', 6, 4, true),
+      (8, 'Text Generation', 'AI-based text generation models.', 6, 4, true),
+  (9, 'Cybersecurity', 'Protecting digital systems from threats.', 1, 2, false),
+    (10, 'Cryptography', 'Securing communication using encryption.', 9, 3, false),
+      (11, 'Quantum Cryptography', 'Using quantum mechanics for encryption.', 10, 4, true),
+      (12, 'Public Key Infrastructure', 'Managing cryptographic keys.', 10, 4, true);
 
 
 INSERT INTO paper (arxiv_id, topic_id, title, num_authors) VALUES

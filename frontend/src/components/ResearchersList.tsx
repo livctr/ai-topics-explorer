@@ -30,7 +30,6 @@ const ResearchersList: React.FC<ResearchersListProps> = ({
   worksIn,
 }) => {
   // Step 1: Filter worksIn records for the selected topic.
-  console.log("worksIn: ", worksIn);
   const matchingWorksInRecords = worksIn.filter(
     (record) => record.topic_id === selectedTopicID
   );

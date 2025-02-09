@@ -1,0 +1,41 @@
+services:
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    env_file:
+      - prod.env
+    ports:
+      - "3000:3000"         # Map your backend port
+    depends_on:
+      - database
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "5173:5173"         # Map your frontend dev server port
+    depends_on:
+      - backend
+
+  data_pipeline:
+    build:
+      context: ./data_pipeline
+      dockerfile: Dockerfile
+    depends_on:
+      - database
+
+  database:
+    build:
+      context: ./database
+      dockerfile: Dockerfile
+    env_file:
+      - prod.env
+    ports:
+      - "5432:5432"
+    volumes:
+      - db_data:/var/lib/postgresql/data
+
+volumes:
+  db_data:

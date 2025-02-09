@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import MarkdownContent from "./MarkdownContent";
 import ResearchersList, { Researcher, WorksIn } from "./ResearchersList";
 import { Topic } from "../types/Topic";
+import { BACKEND } from "../const";
 
 interface InfoPanelProps {
   topics: Topic[];
@@ -21,7 +22,9 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
 
   // When activeSection is null, we show the description.
   // When activeSection === "researchers", we show the researchers view.
-  const [activeSection, setActiveSection] = useState<"researchers" | null>(null);
+  const [activeSection, setActiveSection] = useState<"researchers" | null>(
+    null
+  );
 
   // Cache dictionary mapping topic ID to its description.
   const [descDict, setDescDict] = useState<Record<number, string>>({});
@@ -54,8 +57,8 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
       if (!researchers || !worksIn) {
         try {
           const [resResearchers, resWorksIn] = await Promise.all([
-            fetch("http://localhost:3000/researchers").then((r) => r.json()),
-            fetch("http://localhost:3000/works_in").then((r) => r.json()),
+            fetch(`${BACKEND}/researchers`).then((r) => r.json()),
+            fetch(`${BACKEND}/works_in`).then((r) => r.json()),
           ]);
           setResearchers(resResearchers);
           setWorksIn(resWorksIn);

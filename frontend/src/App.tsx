@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from "react";
 import TopicsTree from "./components/TopicsTree";
 import InfoPanel from "./components/InfoPanel";
-import { YEAR } from "./const";
+import { YEAR, BACKEND } from "./const";
 import "./App.css";
 import { Topic, TopicNode, buildTree } from "./types/Topic";
 import axios from "axios";
@@ -22,7 +22,7 @@ const App: React.FC = () => {
     if (fetched) return;
     setLoading(true);
     try {
-      const response = await axios.get<Topic[]>("http://localhost:3000/topics");
+      const response = await axios.get<Topic[]>(`${BACKEND}/topics`);
       const topics = response.data;
       console.log("topics: ", topics);
       setTopics(topics);
