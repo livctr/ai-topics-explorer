@@ -7,12 +7,12 @@ import os
 from pathlib import Path
 import pickle
 
-from datasets import Dataset
-from kaggle.api.kaggle_api_extended import KaggleApi
-import torch
 from tqdm import tqdm
 
-from data_pipeline.config import DataPaths
+import numpy as np
+import pandas as pd
+
+from data_pipeline.core.config import DataPaths
 
 
 def get_lbl_from_name(names):
@@ -22,6 +22,7 @@ def get_lbl_from_name(names):
         else name[1] + ' ' + name[2] + ' ' + name[0]
         for name in names
     ]
+
 
 def filter_arxiv_for_ml(obtain_summary=False, authors_of_interest=None):
     """Sifts through downloaded arxiv file to find ML-related papers.
@@ -98,6 +99,7 @@ def filter_arxiv_for_ml(obtain_summary=False, authors_of_interest=None):
         # write to pickle file
         with open(summary_path, 'wb') as f:
             pickle.dump(gdf, f)
+
 
 def get_professors_and_relevant_papers(us_professors, k=8, cutoff=datetime(2022, 10, 1)):
     """
