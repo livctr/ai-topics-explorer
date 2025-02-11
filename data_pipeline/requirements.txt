@@ -1,0 +1,8 @@
+beautifulsoup4
+datetime
+python-dotenv
+langchain
+kaggle
+openai
+psycopg2-binary
+regex
