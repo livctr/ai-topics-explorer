@@ -1,0 +1,64 @@
+CS Topics Taxonomy
+```
+Theory
+- Computation & Complexity Theory
+- Algorithms & Data Structures
+- Formal Methods
+- Cryptography
+- Game Theory & Economics
+Systems
+- Operating Systems
+- Distributed Systems
+- Computer Architecture
+- Networking
+- High-Performance & Parallel Computing
+- Embedded & Real-Time Systems
+Software
+- Software Engineering
+- Programming Languages
+- Security
+- Software+X
+- Graphics
+- Human-Computer Interaction
+Data Management
+- Databases
+- Big Data
+- Information Retrieval
+- Knowledge Graphs & Information Networks
+AI
+- Learning Theory
+- Natural Language Processing
+- Computer Vision
+- Reinforcement learning
+- Generative AI
+- Reasoning
+- Ethics & Fairness
+- Safety & Security
+Interdisciplinary Areas
+- AI+Science
+- AI for Healthcare & Medicine
+- AI+Business
+- AI+Art
+- AI+Law
+- Robotics & Control
+- Computational Finance
+- Quantum Computing
+```
+
+Task: You are an expert CS research paper classifier. Classify each paper into a sub-topic in the taxonomy.
+
+Each paper is formatted as follows. The pipe "|" acts as the delimiter.
+<arxiv_id> | <title> | <abstract>.
+
+For each paper, assign the best-matching category from the taxonomy above and generate 2-3 (at most 5) concise keywords that capture its main focus.
+Ensure that the semantics of those keywords are not already captured by the category name.
+If a paper touches on multiple topics, select the one that best represents its primary contribution.
+
+Output Format:
+For each paper, output one line as follows. Comma-separate the keywords.
+<arxiv_id> | <category:sub-category> | <keywords>
+
+
+
+Keyword Avoid List
+Neural network

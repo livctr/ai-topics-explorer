@@ -14,104 +14,10 @@ import psycopg2
 from db_utils import return_conn
 from psycopg2.extras import execute_values
 
+from core.data_utils import EntryExtractor, PaperFilter
+
 SNAPSHOT_PATH = "./data/arxiv-metadata-oai-snapshot.json"
 FILTERED_PATH = "./data/arxiv-metadata-oai-snapshot-filtered.json"
-
-def _get_lbl_from_name(names):
-    """Tuple (last_name, first_name, middle_name) => String 'first_name [middle_name] last_name'."""
-    return [
-        name[1] + ' ' + name[0] if name[2] == '' \
-        else name[1] + ' ' + name[2] + ' ' + name[0]
-        for name in names
-    ]
-
-
-class EntryExtractor:
-
-    @staticmethod
-    def extract_id(entry_data):
-        """Extracts the arXiv ID from the entry data."""
-        return entry_data.get("id")
-
-    @staticmethod
-    def extract_submitter(entry_data):
-        """Extracts the submitter from the entry data."""
-        return entry_data.get("submitter")
-
-    @staticmethod
-    def extract_authors(entry_data):
-        """
-        Extracts and formats author names from the entry data.
-
-        Returns:
-            A list of formatted names in the format 'first_name [middle_name] last_name'.
-        """
-        authors_parsed = entry_data.get("authors_parsed", [])
-        return _get_lbl_from_name(authors_parsed)
-    
-    @staticmethod
-    def extract_title(entry_data):
-        """Extracts the title from the entry data."""
-        return entry_data.get("title").strip()
-    
-    @staticmethod
-    def extract_abstract(entry_data):
-        """Extracts the abstract from the entry data."""
-        return entry_data.get("abstract").strip()
-    
-    @staticmethod
-    def extract_num_authors(entry_data):
-        """Extracts the number of authors from the entry data."""
-        authors_parsed = entry_data.get("authors_parsed", [])
-        return len(authors_parsed)
-    
-    @staticmethod
-    def extract_categories(entry_data):
-        """Extracts the categories from the entry data."""
-        return entry_data.get("categories").split(" ")
-    
-    @staticmethod
-    def extract_date(entry_data, first_version: bool = True):
-        """Extracts the date from the entry data as a datetime"""
-
-        versions = entry_data.get("versions", [])
-
-        # Select the appropriate version
-        version_info = versions[0] if first_version else versions[-1]
-        created_str = version_info.get("created")
-        if not created_str:
-            return False  # No creation date available
-
-        # Parse the date string (e.g., "Sat, 7 Apr 2007 20:23:54 GMT")
-        version_date = datetime.strptime(created_str, "%a, %d %b %Y %H:%M:%S %Z")
-        return version_date
-
-
-class PaperFilter:
-
-    @staticmethod
-    def is_cs(entry_data):
-        """Returns True if the entry is categorized under CS."""
-        categories = EntryExtractor.extract_categories(entry_data)
-        return any(re.match(r"cs\.[a-zA-Z]{2}", cat) for cat in categories)
-
-    @staticmethod
-    def inside_date_range(entry_data, start: datetime, end: datetime, first_version: bool = True):
-        """
-        Returns True if the paper was submitted between start and end dates.
-        Since papers may have multiple versions, `first_version` controls
-        whether we consider version 1 (True) or the last version (False).
-        """
-        try:
-            version_date = EntryExtractor.extract_date(entry_data, first_version)
-        except IndexError:
-            print(f"IndexError on extracting date from {entry_data}")
-            return False
-        except ValueError:
-            print(f"ValueError on extracting date from {entry_data}")
-            return False
-        # Check if the version date is within the given range
-        return start <= version_date <= end
 
 
 def filter_papers(in_path: str, out_path: str, paper_filters: List[Callable[[Dict[str, Any]], bool]]):
@@ -119,6 +25,7 @@ def filter_papers(in_path: str, out_path: str, paper_filters: List[Callable[[Dic
     Filters papers from the input file based on the provided filters and writes the
     filtered papers to the output file.
     """
+    i, j = 0, 0
     with open(in_path, 'r') as f1, open(out_path, 'w') as f2:
         for line in tqdm(f1, desc="Filtering papers..."):
             try:
@@ -126,16 +33,24 @@ def filter_papers(in_path: str, out_path: str, paper_filters: List[Callable[[Dic
             except json.JSONDecodeError:
                 continue  # Skip invalid JSON entries
 
+            j += 1
             # Apply all paper filters (must pass all conditions)
             if all(pf(entry_data) for pf in paper_filters):
                 f2.write(line)
+                i += 1
+
+    print(f"Selected {i} papers out of {j} total papers ({(100*i/j):.2f}%).")
+    print(f"Selected papers written to {out_path}")
 
 
 def get_researchers_histogram(
     in_path: str,
-    paper_filters: List[Callable[[Dict[str, Any]], bool]] = []
+    paper_filters: List[Callable[[Dict[str, Any]], bool]] = [],
 ):
-    """Returns the histogram of researchers and their paper counts."""
+    """Returns the histogram of researchers and their paper counts.
+    
+    If a paper has N authors, each author is credited with 1/N.
+    """
     researcher_paper_count = defaultdict(int)
 
     # Read and process the dataset
@@ -155,11 +70,64 @@ def get_researchers_histogram(
     return researcher_paper_count
 
 
+
+def plot_cumulative_count(freq, save_path=None):
+    """
+    Plots the cumulative count for a dictionary of {num_words: frequency}.
+    
+    Parameters:
+        freq (dict): Dictionary where keys are numbers (e.g., number of words) and 
+                     values are frequencies.
+    """
+    import matplotlib.pyplot as plt
+    import itertools
+    # Sort the dictionary keys in increasing order
+    sorted_keys = sorted(freq.keys())
+    
+    # Extract frequencies in the sorted order
+    freq_list = [freq[k] for k in sorted_keys]
+    
+    # Compute cumulative frequencies using itertools.accumulate
+    cum_freq = list(itertools.accumulate(freq_list))
+    
+    # Create the plot
+    plt.figure(figsize=(8, 6))
+    plt.plot(sorted_keys, cum_freq, marker='o', linestyle='-', color='b')
+    plt.xlabel("Number of Words")
+    plt.ylabel("Cumulative Frequency")
+    plt.title("Cumulative Count Plot")
+    plt.grid(True)
+    if save_path:
+        plt.savefig(save_path)
+
+
+def get_title_length_histogram(in_path: str):
+    """Returns the histogram of abstract lengths."""
+    title_lengths = defaultdict(int)
+    title_num_words = defaultdict(int)
+
+    # Read and process the dataset
+    with open(in_path, 'r') as f1:
+        for line in tqdm(f1, desc="Gathering title lengths..."):
+            try:
+                entry_data = json.loads(line)
+            except json.JSONDecodeError:
+                continue  # Skip invalid JSON entries
+
+            title = EntryExtractor.extract_title(entry_data)
+            title_lengths[len(title)] += 1
+            title_num_words[len(re.findall(r'\w+', title))] += 1
+
+    plot_cumulative_count(title_num_words, save_path="title_num_words.png")
+    plot_cumulative_count(title_lengths, save_path="title_lengths.png")
+    return title_lengths
+
+
 def update_researcher(
     cur: psycopg2.extensions.cursor,
     researcher_paper_count: Dict[str, int],
-    enter_threshold: int = 5,
-    keep_threshold: int = 2
+    enter_threshold: int = 7,
+    keep_threshold: int = 3,
 ):
     """
     Batch update the `researcher` table based on the provided
@@ -177,19 +145,21 @@ def update_researcher(
     #    - For existing researchers: keep if count >= keep_threshold.
     #    - For new researchers: insert only if count >= enter_threshold.
     temp_data = []
-    for name, count in researcher_paper_count.items():
+    for name, i_count in researcher_paper_count.items():
         if name in existing_names:
-            if count >= keep_threshold:
-                temp_data.append((name, count))
+            if i_count >= keep_threshold:
+                temp_data.append((name, i_count))
         else:
-            if count >= enter_threshold:
-                temp_data.append((name, count))
+            if i_count >= enter_threshold:
+                temp_data.append((name, i_count))
+
+    print(f"Number of researchers to consider: {len(temp_data)}")
 
     # 3. Create a temporary table to hold the "desired" state.
     cur.execute("""
         CREATE TEMPORARY TABLE temp_researchers (
             name VARCHAR(255) PRIMARY KEY,
-            pub_count INT
+            pub_count DECIMAL(8, 4)
         ) ON COMMIT DROP;
     """)
 
@@ -223,9 +193,11 @@ def update_researcher(
 
 
 
+
 def update_paper_and_writes(
     cur: psycopg2.extensions.cursor,
     in_path: str,
+    paper_filters: List[Callable[[Dict[str, Any]], bool]] = [],
 ) -> Set[str]:
     """
     Updates the paper and writes tables for papers where at least one author is
@@ -236,13 +208,12 @@ def update_paper_and_writes(
     Parameters:
       cur: An open psycopg2 cursor (assumed to be within a transaction)
       in_path: The file path to the JSON snapshot of paper data.
-    
-    Returns:
-      A set of arXiv IDs of papers written by active researchers.
+      paper_filters: A list of filters to apply to the papers.
+
     """
-    arxiv_ids = set()
     paper_rows = []   # Will accumulate tuples for the paper table
     writes_rows = []  # Will accumulate tuples for the writes table
+    seen_arxiv_ids = set()
 
     # Get the active researchers from the database.
     # This assumes that the researcher table contains only active researchers.
@@ -257,35 +228,38 @@ def update_paper_and_writes(
                 entry_data = json.loads(line)
             except json.JSONDecodeError:
                 continue  # Skip invalid JSON entries
+        
+            # if not all
+            if not all(pf(entry_data) for pf in paper_filters):
+                continue
 
-            # Extract the list of authors from the entry.
-            # get_researchers() should return a list of author names in order.
-            researchers_in_paper = EntryExtractor.extract_authors(entry_data)
-
-            # Filter out only the active ones.
             # If none of the paper's authors is an active researcher, skip the paper.
+            researchers_in_paper = EntryExtractor.extract_authors(entry_data)
             if not any(name in active_researchers for name in researchers_in_paper):
                 continue
 
             # Extract paper information.
             arxiv_id = EntryExtractor.extract_id(entry_data)
+            seen_arxiv_ids.add(arxiv_id)
             paper_rows.append((
                 arxiv_id,
                 None,
-                EntryExtractor.extract_title(entry_data),
-                EntryExtractor.extract_abstract(entry_data),
+                EntryExtractor.extract_title(entry_data, max_chars=245),
+                EntryExtractor.extract_abstract(entry_data, max_chars=2000),
                 EntryExtractor.extract_date(entry_data, first_version=True).date(),
                 EntryExtractor.extract_num_authors(entry_data)  
             ))
 
             # For each author in the paper, record the relationship if they are active.
-            # We assume that get_researchers returns the authors in the proper order.
             for pos, name in enumerate(researchers_in_paper, start=1):
                 if name in active_researchers:
                     researcher_id = active_researchers[name]
                     writes_rows.append((researcher_id, arxiv_id, pos))
 
     # Batch upsert the paper data.
+    print("Number of papers to consider inserting: ", len(paper_rows))
+    print("Number of conns to consider inserting: ", len(writes_rows))
+
     if paper_rows:
         paper_insert_query = """
             INSERT INTO paper (arxiv_id, topic_id, title, abstract, date, num_authors)
@@ -309,13 +283,110 @@ def update_paper_and_writes(
         """
         execute_values(cur, writes_insert_query, writes_rows)
 
+    # Delete any papers that are in the database but not in the file.
+    # If no papers were seen (i.e., seen_arxiv_ids is empty), delete all papers.
+    if seen_arxiv_ids:
+        cur.execute(
+            "DELETE FROM paper WHERE arxiv_id NOT IN %s;",
+            (tuple(seen_arxiv_ids),)
+        )
+    else:
+        cur.execute("DELETE FROM paper;")
+
+    return seen_arxiv_ids
 
 
+def main(
+         author_tracking_period_months: int = 24,
+         author_tracking_enter_threshold: int = 7,
+         author_tracking_keep_threshold: int = 3,
+         paper_tracking_period_months: int = 12,
+         ):
 
+    # Track authors who've published the criteria number of papers in the last year
+    today = datetime.today()
+    author_start_date = today - timedelta(days=author_tracking_period_months*30)
+
+    # filter_papers(
+    #     SNAPSHOT_PATH, 
+    #     FILTERED_PATH,
+    #     [
+    #         PaperFilter.is_cs,
+    #         lambda x: PaperFilter.inside_date_range(x, author_start_date, today, first_version=True)
+    #     ]
+    # )
+
+    # Get the histogram of researchers and their paper counts
+    researcher_paper_count = get_researchers_histogram(FILTERED_PATH)
+
+    # Connect to the database
+    conn = return_conn()
+    try:
+        with conn.cursor() as cur:
+            # Ensure that the processing_state table exists.
+            cur.execute("""
+                CREATE TABLE IF NOT EXISTS processing_state (
+                    step VARCHAR(255) PRIMARY KEY,
+                    done BOOLEAN NOT NULL,
+                    updated_at TIMESTAMP NOT NULL
+                );
+            """)
+
+            # Check if the research and paper updates have already been executed
+            cur.execute(
+                "SELECT done FROM processing_state WHERE step = %s", 
+                ('research_and_paper_updated',)
+            )
+            state_row = cur.fetchone()
+
+            # TODO flip the state once topics are produced
+            if False:  # state_row and state_row[0]:
+                print("Researcher and paper updates already performed. Skipping updates.")
+            else:
+                # Perform the updates
+                update_researcher(cur,
+                                  researcher_paper_count,
+                                  enter_threshold=author_tracking_enter_threshold,
+                                  keep_threshold=author_tracking_keep_threshold)
+                del researcher_paper_count
+
+                paper_start_date = today - timedelta(days=paper_tracking_period_months*30)
+                update_paper_and_writes(cur, FILTERED_PATH, [
+                    lambda x: PaperFilter.inside_date_range(
+                        x, paper_start_date, today, first_version=True)
+                ])
+
+                # Save the state that these updates are done.
+                cur.execute("""
+                    INSERT INTO processing_state (step, done, updated_at)
+                    VALUES (%s, %s, %s)
+                    ON CONFLICT (step)
+                    DO UPDATE SET done = EXCLUDED.done, updated_at = EXCLUDED.updated_at
+                """, ('research_and_paper_updated', True, datetime.now()))
+                print("Updates executed and state saved.")
+            
+            conn.commit()
+    finally:
+        conn.close()
+    
 
 
 if __name__ == "__main__":
-    print(execute_query("SELECT * FROM researcher;"))
+    main(
+        author_tracking_period_months=24,
+        author_tracking_enter_threshold=7,
+        author_tracking_keep_threshold=3,
+        paper_tracking_period_months=1,
+    )
+
+    # in_path = SNAPSHOT_PATH
+    # out_path = "./data/arxiv-metadata-oai-snapshot-filtered-2years.json"
+    # end_date = datetime.today()
+    # start_date = end_date - timedelta(days=2*365)
+    # last_two_years = lambda x: PaperFilter.inside_date_range(x, start_date, end_date, first_version=True)
+    
+    # filter_papers(in_path, out_path, [PaperFilter.is_cs, last_two_years])
+    # print(execute_query("SELECT * FROM researcher;"))
 
     # # Filters for CS papers in the last two years
     # end_date = datetime.today()
@@ -344,8 +415,3 @@ if __name__ == "__main__":
     #     raise ValueError("Both start_date and end_date must be provided or neither.")
 
     # is_in_date_range = lambda x: PaperFilter.inside_date_range(x, start_date, end_date, first_version=True)
-
-    # researchers = gather_researchers(
-    #     args.threshold,
-    #     paper_filters=[PaperFilter.is_cs, is_in_date_range]
-    # )
