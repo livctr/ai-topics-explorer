@@ -1,53 +1,45 @@
-Artificial Intelligence
-Artificial Intelligence:Expert Systems
-Artificial Intelligence:Theorem Proving
-Artificial Intelligence:Knowledge Representation
-Artificial Intelligence:Planning
-Artificial Intelligence:Uncertainty in AI
-Artificial Intelligence:Computer Vision
-Artificial Intelligence:Robotics & Control
-Artificial Intelligence:Machine Learning
-Artificial Intelligence:Multiagent Systems
-Artificial Intelligence:Natural Language Processing
-Artificial Intelligence:Reinforcement Learning
-Artificial Intelligence:AI+X
-
+Theory
+Theory:Computation & Complexity Theory
+Theory:Algorithms & Data Structures
+Theory:Formal Methods
+Theory:Cryptography
+Theory:Game Theory & Economics
 Systems
-Systems:Hardware Architecture
-Systems:Distributed Computing
-Systems:Networking & Internet Architecture
 Systems:Operating Systems
-Systems:Performance
-
-Theory & Algorithms
-Theory & Algorithms:Computational Complexity
-Theory & Algorithms:Computational Geometry
-Theory & Algorithms:Discrete Math
-Theory & Algorithms:Data Structures & Algorithms
-Theory & Algorithms:Formal Languages & Automata Theory
-Theory & Algorithms:Logic in Computer Science
-Theory & Algorithms:Symbolic Computation
-Theory & Algorithms:Game Theory
-Theory & Algorithms:Information Theory
-
+Systems:Distributed Systems
+Systems:Computer Architecture
+Systems:Networking
+Systems:High-Performance & Parallel Computing
+Systems:Embedded & Real-Time Systems
 Software
-Software:Computational Engineering
-Software:Finance
-Software:Science
-Software:Graphics
-Software:Human-Computer Interaction
-Software:Mathematical Software
-Software:Multimedia
-Software:Sound
 Software:Software Engineering
 Software:Programming Languages
-
-Data & Information Management
-Data & Information Management:Databases
-Data & Information Management:Information Retrieval
-Data & Information Management:Social & Information Networks
-
-Misc
-Misc:Security & Cryptography
-Misc:Emerging Technologies
-Misc:General Literature
+Software:Security
+Software:Software+X
+Software:Graphics
+Software:Human-Computer Interaction
+Data Management
+Data Management:Databases
+Data Management:Big Data
+Data Management:Information Retrieval
+Data management:Knowledge Graphs & Information Networks
+AI
+AI:ML Theory
+AI:Natural Language Processing
+AI:Computer Vision
+AI:Reinforcement learning
+AI:Generative AI
+AI:AI for Mathematics
+AI:Ethics & Fairness
+AI:Safety & Security
+Interdisciplinary Areas:AI+Science
+Interdisciplinary Areas:AI for Healthcare & Medicine
+Interdisciplinary Areas:AI+Sustainability
+Interdisciplinary Areas:AI+Business
+Interdisciplinary Areas:AI+Art
+Interdisciplinary Areas:AI+Law
+Interdisciplinary Areas:AI+Cognitive Science
+Interdisciplinary Areas:Robotics & Control
+Interdisciplinary Areas:Computational Finance
+Interdisciplinary Areas:Computational Biology
+Interdisciplinary Areas:Quantum Computing
