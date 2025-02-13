@@ -116,7 +116,6 @@ async def extract_keywords_batch(
             for arxiv_id, abstract in chunk:
                 req = requestify_keyword_extraction(arxiv_id, abstract, max_keywords=max_keywords)
                 f.write(json.dumps(req) + "\n")
-        
         # Upload batch file
         batch_file = client.files.create(
             file=open(input_filename, "rb"),
@@ -132,6 +131,10 @@ async def extract_keywords_batch(
         print(f"Submitting batch {i + 1}/{num_chunks}.")
         print(f" - {batch_file}")
         print(f" - {batch_job}")
+        key_names = f"data/tmp/keyword-input-ids.txt"
+        mode = "w" if i == 0 else "a"
+        with open(key_names, mode) as f:  # in case of system failure
+            f.write(str(i) + ", " + batch_job.id)
 
         # Poll for job completion
         batch_jobs.append(
@@ -139,29 +142,6 @@ async def extract_keywords_batch(
         )
 
     await asyncio.gather(*batch_jobs)
-
-
-
-def send_keywords_to_db(keywords_list):
-    """
-    Given a list of tuples (arxiv_id, keywords), update the 'paper' table so that
-    each record's keywords attribute is set accordingly.
-    
-    Parameters:
-        keywords_list (list of tuple): Each tuple is (arxiv_id, keywords)
-    """
-    conn = return_conn()
-    try:
-        with conn:
-            cur = conn.cursor()
-            # Note: the input tuple is (arxiv_id, keywords), so we need to reverse the order.
-            query = "UPDATE paper SET keywords = ? WHERE arxiv_id = ?"
-            params = [(keywords, arxiv_id) for arxiv_id, keywords in keywords_list]
-            cur.executemany(query, params)
-    except Exception as e:
-        print("Error updating keywords in the database:", e)
-    finally:
-        conn.close()
 
 
 def send_keywords_to_db():
@@ -172,62 +152,115 @@ def send_keywords_to_db():
     The function verifies that each entry is successful (status code 200, error is null, and keywords exists).
     It then updates the `paper` table so that for each paper with matching arxiv_id, the `keywords` column is set.
     Returns True if every line was successful and the update completes, otherwise returns False.
+
+    If no output files are found, the function attempts to read the batch job identifiers from the key file
+    (data/tmp/keyword-input-ids.txt) and calls poll_job(client, batch_idx, batch_id) to generate the output files.
     """
-    # Collect tuples of (keywords, arxiv_id) for the database update.
-    updates = []
-    # Use glob to find all matching files.
+    import os
+    import glob
+    import json
+    import asyncio
+
     file_pattern = "data/tmp/keyword-output-*.jsonl"
     files = glob.glob(file_pattern)
-    
-    # Process each file.
+
+    # If no output files are found, attempt to poll the jobs using the key file.
+    if not files:
+        key_file = "data/tmp/keyword-input-ids.txt"
+        if not os.path.exists(key_file):
+            print("Key file not found. No keyword output files available.")
+            return False
+
+        try:
+            with open(key_file, "r", encoding="utf-8") as f:
+                lines = [line.strip() for line in f if line.strip()]
+        except Exception as e:
+            print(f"Error reading key file {key_file}: {e}")
+            return False
+
+        if not lines:
+            print("Key file is empty. No keyword output files available.")
+            return False
+
+        # Initialize the client.
+        client = OpenAI()
+        tasks = []
+        for line in lines:
+            parts = line.split(",")
+            if len(parts) != 2:
+                print(f"Invalid line in key file: {line}")
+                continue
+            try:
+                batch_idx = int(parts[0].strip())
+                batch_id = parts[1].strip()
+            except Exception as e:
+                print(f"Error parsing line in key file '{line}': {e}")
+                continue
+            tasks.append(poll_job(client, batch_idx, batch_id))
+
+        if tasks:
+            try:
+                # Run all poll_job tasks concurrently.
+                asyncio.run(asyncio.gather(*tasks))
+            except Exception as e:
+                print(f"Error polling batch jobs: {e}")
+                return False
+        else:
+            print("No valid batch job tasks could be created from key file.")
+            return False
+
+        # After polling, try to locate the output files again.
+        files = glob.glob(file_pattern)
+        if not files:
+            print("No keyword output files found after polling batch jobs.")
+            return False
+
+    # Collect tuples of (keywords, arxiv_id) for the database update.
+    updates = []
     for file_path in files:
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 for line_number, line in enumerate(f, start=1):
                     line = line.strip()
                     if not line:
-                        continue  # skip empty lines
+                        continue  # Skip empty lines.
                     try:
                         output_entry = json.loads(line)
                     except Exception as e:
                         print(f"Error parsing JSON in file {file_path} at line {line_number}: {e}")
                         return False
-                    
-                    # Check if there's any error.
+
+                    # Check for errors in the entry.
                     if output_entry.get("error") is not None:
                         print(f"Error found in entry in file {file_path} at line {line_number}: {output_entry.get('error')}")
                         return False
-                    
-                    # Check that the response has a 200 status.
+
                     response = output_entry.get("response")
                     if response is None or response.get("status_code") != 200:
                         print(f"Non-success status code in file {file_path} at line {line_number}")
                         return False
-                    
-                    # Extract the keywords from the response.
+
                     try:
                         keywords = response["body"]["choices"][0]["message"]["content"]
                     except (KeyError, IndexError) as e:
                         print(f"Error extracting keywords in file {file_path} at line {line_number}: {e}")
                         return False
+
                     if not keywords:
                         print(f"Empty keywords in file {file_path} at line {line_number}")
                         return False
-                    
-                    # Extract the arxiv_id from "custom_id"
+
                     arxiv_id = output_entry.get("custom_id")
                     if not arxiv_id:
                         print(f"Missing custom_id in file {file_path} at line {line_number}")
                         return False
-                    
+
                     # Append tuple in order for the parameterized query: (keywords, arxiv_id)
                     updates.append((keywords, arxiv_id))
         except Exception as e:
             print(f"Error reading file {file_path}: {e}")
             return False
 
-    # If no updates were collected, decide if that is success or not.
-    # Here, we assume that having no files or no entries is a failure.
     if not updates:
         print("No valid keyword entries were found.")
         return False
@@ -245,6 +278,7 @@ def send_keywords_to_db():
         return False
     finally:
         conn.close()
+
 
 
 # To run the async function:
