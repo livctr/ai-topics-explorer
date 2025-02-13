@@ -11,6 +11,66 @@ def _get_lbl_from_name(names):
     ]
 
 
+def remove_unmatched(text: str, open_sym: str, close_sym: str) -> str:
+    """
+    Remove unmatched occurrences of open_sym and close_sym in text.
+    """
+    stack = []
+    indices_to_remove = set()
+    
+    # First pass: mark unmatched closing symbols.
+    for i, ch in enumerate(text):
+        if ch == open_sym:
+            stack.append(i)
+        elif ch == close_sym:
+            if stack:
+                stack.pop()
+            else:
+                indices_to_remove.add(i)
+    # Any remaining open symbols in the stack are unmatched.
+    indices_to_remove.update(stack)
+    
+    # Build new text without the unmatched symbols.
+    new_text = "".join(ch for i, ch in enumerate(text) if i not in indices_to_remove)
+    return new_text
+
+def textify(text: str) -> str:
+    # 1. Replace tabs and newlines with spaces and collapse extra spaces.
+    text = text.replace("\n", " ").replace("\t", " ")
+    text = re.sub(r"\s+", " ", text)
+    
+    # 2. Replace LaTeX commands for italics, bold, sans-serif, and math-sans with their content.
+    text = re.sub(r"\\(?:textit|textbf|textsf|mathsf)\{([^}]+)\}", r"\1", text)
+    
+    # 3. Replace "\%" with "%" and "\times" with " times".
+    text = text.replace("\\%", "%").replace("\\times", " times")
+    
+    # 4. Remove any remaining dollar signs.
+    text = text.replace("$", "")
+    
+    # 5. Remove any \url{...} commands (and their contents).
+    text = re.sub(r"\\url\{[^}]*\}", "", text)
+    
+    # 6. Remove square brackets and whatever is inside them.
+    text = re.sub(r'\[[^\]]*\]', '', text)
+    
+    # 7. Remove unmatched parentheses and curly braces.
+    text = remove_unmatched(text, "(", ")")
+    text = remove_unmatched(text, "{", "}")
+    
+    # 8. Remove the last sentence if it includes a link (ignoring case).
+    sentences = re.split(r'\.\s*', text.strip())
+    if sentences:
+        last_sentence = sentences[-1].strip()
+        if "http" in last_sentence.lower():
+            sentences = sentences[:-1]
+        text = ". ".join(s for s in sentences if s)
+        if text and text[-1] not in ".!?":
+            text += "."
+    
+    return text.strip()
+
+
 class EntryExtractor:
 
     @staticmethod
@@ -48,6 +108,7 @@ class EntryExtractor:
     def extract_abstract(entry_data, max_chars: int = 2000):
         """Extracts the abstract from the entry data."""
         abstract = entry_data.get("abstract").strip()
+        abstract = textify(abstract)
         if max_chars is not None and len(abstract) > max_chars:
             front = abstract[:max_chars // 2]
             back = abstract[-max_chars // 2:]
@@ -113,4 +174,3 @@ class PaperFilter:
         """Returns True if at least one author is in the provided set."""
         authors = EntryExtractor.extract_authors(entry_data)
         return any(author in author_set for author in authors)
-    

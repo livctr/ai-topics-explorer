@@ -191,6 +191,8 @@ def update_researcher(
         WHERE name NOT IN (SELECT name FROM temp_researchers);
     """)
 
+    print("Updated `researcher` relation.")
+
 
 
 
@@ -223,7 +225,7 @@ def update_paper_and_writes(
 
     # Process the file line by line.
     with open(in_path, 'r') as f:
-        for line in tqdm(f, desc="Updating `papers` and `writes`..."):
+        for line in tqdm(f, desc="Gathering papers and write relationships..."):
             try:
                 entry_data = json.loads(line)
             except json.JSONDecodeError:
@@ -292,6 +294,8 @@ def update_paper_and_writes(
         )
     else:
         cur.execute("DELETE FROM paper;")
+    
+    print("Updated `paper` and `writes` relations.")
 
     return seen_arxiv_ids
 
