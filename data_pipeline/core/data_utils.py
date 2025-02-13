@@ -58,15 +58,25 @@ def textify(text: str) -> str:
     text = remove_unmatched(text, "(", ")")
     text = remove_unmatched(text, "{", "}")
     
-    # 8. Remove the last sentence if it includes a link (ignoring case).
-    sentences = re.split(r'\.\s*', text.strip())
+    # 8. Detect if the last sentence contains a link and remove it if so.
+    #
+    # Instead of splitting simply on periods (which can break up URLs that include periods),
+    # we split on punctuation followed by whitespace and a capital letter.
+    sentences = re.split(r'(?<=[.!?])\s+(?=[A-Z])', text.strip())
+    github_link_pattern = re.compile(r'https://', re.IGNORECASE)
+
     if sentences:
         last_sentence = sentences[-1].strip()
-        if "http" in last_sentence.lower():
-            sentences = sentences[:-1]
-        text = ". ".join(s for s in sentences if s)
-        if text and text[-1] not in ".!?":
-            text += "."
+        if github_link_pattern.search(last_sentence):
+            # Remove the last sentence.
+            # Find the starting index of the last sentence in the original text.
+            idx = text.rfind(last_sentence)
+            if idx != -1:
+                text = text[:idx].rstrip()
+    
+    # Ensure the text ends with appropriate punctuation.
+    if text and text[-1] not in ".!?":
+        text += "."
     
     return text.strip()
 
