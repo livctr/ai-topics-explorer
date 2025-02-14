@@ -7,6 +7,78 @@ from core.form_topics import map_papers_to_topics
 from db_utils import return_conn
 
 
+def init_db_if_needed(cur):
+    """
+    Initialize the database tables and index for topics, researchers, papers, writes, and works_in.
+    
+    This function creates the tables and index only if they do not already exist.
+    
+    Parameters:
+        conn: A psycopg2 connection object to the PostgreSQL database.
+    """
+    # Create topic table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS topic (
+            id INT PRIMARY KEY,
+            name TEXT NOT NULL,
+            description TEXT, -- markdown
+            parent_id INT REFERENCES topic(id) ON DELETE SET NULL,
+            level INT CHECK (level BETWEEN 1 AND 4),
+            is_leaf BOOLEAN NOT NULL
+        );
+    """)
+
+    # Create researcher table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS researcher (
+            id SERIAL PRIMARY KEY,
+            name TEXT NOT NULL,
+            link TEXT,
+            affiliation TEXT,  -- primary affiliation
+            pub_count INT NOT NULL -- for ordering
+        );
+    """)
+
+    # Create an index on researcher.name if it doesn't already exist
+    cur.execute("""
+        CREATE INDEX IF NOT EXISTS researcher_name_idx ON researcher(name);
+    """)
+
+    # Create paper table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS paper (
+            arxiv_id TEXT PRIMARY KEY,
+            topic_id INT REFERENCES topic(id) ON DELETE SET NULL,
+            topic_from_llm TEXT,
+            title TEXT NOT NULL,
+            abstract TEXT,
+            keywords TEXT, -- Added keywords attribute
+            date DATE NOT NULL,
+            num_authors INT CHECK (num_authors >= 0)
+        );
+    """)
+
+    # Create writes table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS writes (
+            researcher_id INT REFERENCES researcher(id) ON DELETE CASCADE,
+            arxiv_id TEXT REFERENCES paper(arxiv_id) ON DELETE CASCADE,
+            author_position INT CHECK (author_position >= 1), -- 1-indexed
+            PRIMARY KEY (researcher_id, arxiv_id)
+        );
+    """)
+
+    # Create works_in table
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS works_in (
+            topic_id INT REFERENCES topic(id) ON DELETE CASCADE,
+            researcher_id INT REFERENCES researcher(id) ON DELETE CASCADE,
+            score DECIMAL(5, 2),
+            PRIMARY KEY (topic_id, researcher_id)
+        );
+    """)
+
+
 def update_pipeline_state(cur, step: str, completed: bool):
     cur.execute(
         """
@@ -93,6 +165,10 @@ def main():
     conn = return_conn()
     try:
         with conn.cursor() as cur:
+
+            # Ensure we have tables to fill into
+            init_db_if_needed(cur)
+            
             # Ensure pipeline_state table exists
             cur.execute("""
                 CREATE TABLE IF NOT EXISTS pipeline_state (
