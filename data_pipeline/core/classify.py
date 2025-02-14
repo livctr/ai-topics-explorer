@@ -32,51 +32,50 @@ Theory:Computation & Complexity Theory
 Theory:Cryptography
 Theory:Formal Methods
 Theory:Game Theory & Economics
-Systems: Computer Architecture
-Systems: Distributed Systems
-Systems: Embedded & Real-Time Systems
-Systems: High-Performance & Parallel Computing
-Systems: Networking
-Systems: Operating Systems
+Systems:Computer Architecture
+Systems:Databases
+Systems:Distributed Systems
+Systems:Embedded & Real-Time Systems
+Systems:High-Performance & Parallel Computing
+Systems:Networking
+Systems:Operating Systems
 Software:Graphics
 Software:Human-Computer Interaction
 Software:Programming Languages
 Software:Security
 Software:Software Engineering
-Software:Software+X
-Data Management:Big Data
-Data Management:Databases
-Data Management:Information Retrieval
-Data Management:Knowledge Graphs & Information Networks
 AI:AI Robustness & Security
-AI:Computer Vision
-AI:Generative AI
+AI:Computer Vision:3D Vision & Scene Understanding
+AI:Computer Vision:Image & Video Understanding
+AI:Computer Vision:Recognition & Detection
+AI:Generative AI:Diffusion Models
+AI:Generative AI:Architectures
+AI:Generative AI:Learning & Representation Methods
+AI:Information Retrieval
+AI:Knowledge Graphs & Information Networks
 AI:Learning Theory
 AI:Multimodal AI
-AI:Natural Language Processing
+AI:Natural Language Processing:LLM Pre-training
+AI:Natural Language Processing:LLM Post-training
+AI:Natural Language Processing:Science of LLMs
 AI:Reinforcement Learning
+AI:Time Series
 Interdisciplinary Areas
-Interdisciplinary Areas:AI+Art
-Interdisciplinary Areas:AI+Business
-Interdisciplinary Areas:AI+Education
-Interdisciplinary Areas:AI+Healthcare/Medicine
-Interdisciplinary Areas:AI+Law
-Interdisciplinary Areas:AI+Science
-Interdisciplinary Areas:AI+Sustainability
+Interdisciplinary Areas:CS+Art
+Interdisciplinary Areas:CS+Business
+Interdisciplinary Areas:CS+Education
+Interdisciplinary Areas:CS+Healthcare/Medicine
+Interdisciplinary Areas:CS+Law
+Interdisciplinary Areas:CS+Science
+Interdisciplinary Areas:CS+Sustainability
 Interdisciplinary Areas:Computational Finance
 Interdisciplinary Areas:Quantum Computing
 Interdisciplinary Areas:Robotics & Control
 ```
 
-Classify the provided abstract.
+Each line in the taxonomy is a class. Output the exact string of the best-matching class.
 
-Rules
-(1) Domain-Specific AI: If the keywords include terms like "Large Language Model" applied to a specific domain, classify them as `Interdisciplinary Areas:AI+X` (where X represents the domain).
-(2) Additional Fine-grained Classification Requirement: For classifications that fall into one of
-`Software+X`, `Natural Language Processing`, `Computer Vision`, `Generative AI`, `AI+Science`, 
-In addition to classification, assign a fine-grained topic, e.g., "AI:Natural Language Processing:LLM Pre-training", "AI:Computer Vision:Object Detection".
-
-Output Format: colon-delimited classification
+If there are no good matches (very rare), create your own tag.
 
 {abstract}
 """
@@ -101,57 +100,6 @@ def extract_keywords(llm: ChatOpenAI, abstract: str, max_keywords: int = 7):
 def classify_topic(llm: ChatOpenAI, abstract: str):
     prompt = abstract_classification_template.invoke({"abstract": abstract})
     return get_chat_completion(llm, prompt)
-
-
-def fill_in_keywords_in_db(limit: int = 10, sample_freq: int = 200):
-    """
-    Iterates over a limited number of papers without keywords, extracts keywords using extract_keyword,
-    and updates the database with the results.
-
-    Parameters:
-        limit (int): The maximum number of papers to process.
-    """
-    conn = return_conn()
-    cur = conn.cursor()
-    
-    # Fetch papers with missing or empty keywords, limiting the number of papers
-    cur.execute("""
-        SELECT arxiv_id, abstract 
-        FROM paper 
-        WHERE keywords IS NULL OR keywords = ''
-        ORDER BY date DESC
-        LIMIT %s
-    """, (limit,))
-    rows = cur.fetchall()
-    print(f"Number of papers needing keyword extraction: {len(rows)} ")
-
-    i = 0
-    
-    # Use tqdm to show progress as we iterate over the papers
-    for arxiv_id, abstract in tqdm(rows, desc="Getting keywords"):
-        try:
-            # Extract keywords using the provided function
-            keywords = extract_keyword(abstract)
-
-            if i % sample_freq == 0:
-                print(f"Updating {arxiv_id} with keywords: {keywords}")
-            i += 1
-
-            # Update the record with the extracted keywords
-            cur.execute("""
-                UPDATE paper
-                SET keywords = %s
-                WHERE arxiv_id = %s
-            """, (keywords, arxiv_id))
-            conn.commit()
-        except Exception as e:
-            print(f"Error processing arxiv_id {arxiv_id}: {e}")
-            # Rollback if there's an error and continue with the next record
-            conn.rollback()
-
-    cur.close()
-    conn.close()
-
 
 
 def fill_in_topic_from_llm_in_db(llm: ChatOpenAI,
@@ -236,7 +184,7 @@ if __name__ == "__main__":
     cost_per_mil_output_tokens = 0.6
 
     fill_in_topic_from_llm_in_db(llm,
-                                 limit=1000,
-                                 sample_freq=50,
+                                 limit=50,
+                                 sample_freq=1,
                                  cost_per_mil_input_token=cost_per_mil_input_tokens,
                                  cost_per_mil_output_token=cost_per_mil_output_tokens)
