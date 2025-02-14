@@ -29,36 +29,34 @@ AI
 - Learning Theory
 - Natural Language Processing
 - Computer Vision
-- Reinforcement learning
+- Reinforcement Learning
 - Generative AI
-- Reasoning
-- Ethics & Fairness
-- Safety & Security
+- Automated Reasoning
+- AI Robustness & Security
+- Multimodal AI
 Interdisciplinary Areas
 - AI+Science
-- AI for Healthcare & Medicine
+- AI+Healthcare/Medicine
 - AI+Business
 - AI+Art
 - AI+Law
+- AI+Education
+- AI+Sustainability
 - Robotics & Control
 - Computational Finance
 - Quantum Computing
 ```
 
-Task: You are an expert CS research paper classifier. Classify each paper into a sub-topic in the taxonomy.
+You are given a comma-delimited list of keywords sorted from most to least paper-specific. Your task is to classify this list into one topic from the provided taxonomy.
 
-Each paper is formatted as follows. The pipe "|" acts as the delimiter.
-<arxiv_id> | <title> | <abstract>.
+Rules
+(1) Domain-Specific AI: If the keywords include terms like "Large Language Model" applied to a specific domain, classify them as `AI+X` (where X represents the domain).
 
-For each paper, assign the best-matching category from the taxonomy above and generate 2-3 (at most 5) concise keywords that capture its main focus.
-Ensure that the semantics of those keywords are not already captured by the category name.
-If a paper touches on multiple topics, select the one that best represents its primary contribution.
+(2) Additional Subtopic Requirement: For classifications that fall into one of
+`Software+X`, `Natural Language Processing`, `Computer Vision`, `Generative AI`, `AI+Science`, 
+In addition to the topic, assign a subtopic from the taxonomy. For example:
+- For `Natural Language Processing`, possible subtopics include `LLM Pretraining` or `LLM Post-training`.
+- For `Computer Vision`, possible subtopics include `Video Understanding` or `Object Detection`.
 
 Output Format:
-For each paper, output one line as follows. Comma-separate the keywords.
-<arxiv_id> | <category:sub-category> | <keywords>
-
-
-
-Keyword Avoid List
-Neural network
+<topic:subtopic>

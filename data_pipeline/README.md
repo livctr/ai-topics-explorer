@@ -1,0 +1,1 @@
+TODO: state flip after ingestion before topic hierarchy

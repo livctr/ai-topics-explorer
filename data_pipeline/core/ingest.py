@@ -194,8 +194,6 @@ def update_researcher(
     print("Updated `researcher` relation.")
 
 
-
-
 def update_paper_and_writes(
     cur: psycopg2.extensions.cursor,
     in_path: str,
@@ -267,12 +265,7 @@ def update_paper_and_writes(
             INSERT INTO paper (arxiv_id, topic_id, title, abstract, date, num_authors)
             VALUES %s
             ON CONFLICT (arxiv_id)
-            DO UPDATE SET 
-                topic_id = EXCLUDED.topic_id,
-                title = EXCLUDED.title,
-                abstract = EXCLUDED.abstract,
-                date = EXCLUDED.date,
-                num_authors = EXCLUDED.num_authors;
+            DO NOTHING;
         """
         execute_values(cur, paper_insert_query, paper_rows)
 
@@ -302,8 +295,8 @@ def update_paper_and_writes(
 
 def main(
          author_tracking_period_months: int = 24,
-         author_tracking_enter_threshold: int = 7,
-         author_tracking_keep_threshold: int = 3,
+         author_num_papers_enter_threshold: int = 7,
+         author_num_papers_keep_threshold: int = 3,
          paper_tracking_period_months: int = 12,
          ):
 
@@ -311,14 +304,14 @@ def main(
     today = datetime.today()
     author_start_date = today - timedelta(days=author_tracking_period_months*30)
 
-    # filter_papers(
-    #     SNAPSHOT_PATH, 
-    #     FILTERED_PATH,
-    #     [
-    #         PaperFilter.is_cs,
-    #         lambda x: PaperFilter.inside_date_range(x, author_start_date, today, first_version=True)
-    #     ]
-    # )
+    filter_papers(
+        SNAPSHOT_PATH, 
+        FILTERED_PATH,
+        [
+            PaperFilter.is_cs,
+            lambda x: PaperFilter.inside_date_range(x, author_start_date, today, first_version=True)
+        ]
+    )
 
     # Get the histogram of researchers and their paper counts
     researcher_paper_count = get_researchers_histogram(FILTERED_PATH)
@@ -350,8 +343,8 @@ def main(
                 # Perform the updates
                 update_researcher(cur,
                                   researcher_paper_count,
-                                  enter_threshold=author_tracking_enter_threshold,
-                                  keep_threshold=author_tracking_keep_threshold)
+                                  enter_threshold=author_num_papers_enter_threshold,
+                                  keep_threshold=author_num_papers_keep_threshold)
                 del researcher_paper_count
 
                 paper_start_date = today - timedelta(days=paper_tracking_period_months*30)
@@ -368,7 +361,7 @@ def main(
                     DO UPDATE SET done = EXCLUDED.done, updated_at = EXCLUDED.updated_at
                 """, ('research_and_paper_updated', True, datetime.now()))
                 print("Updates executed and state saved.")
-            
+
             conn.commit()
     finally:
         conn.close()
@@ -378,44 +371,7 @@ def main(
 if __name__ == "__main__":
     main(
         author_tracking_period_months=24,
-        author_tracking_enter_threshold=7,
-        author_tracking_keep_threshold=3,
-        paper_tracking_period_months=1,
+        author_num_papers_enter_threshold=7,
+        author_num_papers_keep_threshold=1,
+        paper_tracking_period_months=2,
     )
-
-    # in_path = SNAPSHOT_PATH
-    # out_path = "./data/arxiv-metadata-oai-snapshot-filtered-2years.json"
-    # end_date = datetime.today()
-    # start_date = end_date - timedelta(days=2*365)
-    # last_two_years = lambda x: PaperFilter.inside_date_range(x, start_date, end_date, first_version=True)
-    
-    # filter_papers(in_path, out_path, [PaperFilter.is_cs, last_two_years])
-    # print(execute_query("SELECT * FROM researcher;"))
-
-    # # Filters for CS papers in the last two years
-    # end_date = datetime.today()
-    # start_date = end_date - timedelta(days=2*365)
-    # last_two_years = lambda x: PaperFilter.inside_date_range(x, start_date, end_date, first_version=True)
-    # ids = gather_arxiv_ids(paper_filters=[PaperFilter.is_cs, last_two_years])
-    # import pdb ; pdb.set_trace()
-    # print("number of ids: ", len(ids))
-    # print()
-
-    # from argparse import ArgumentParser
-
-    # parser = ArgumentParser(description="Gather researchers with a minimum paper count.")
-    # parser.add_argument("--threshold", type=int, default=5, help="Minimum paper count threshold")
-    # parser.add_argument("--start_date", type=str, help="Start date for paper filtering")
-    # parser.add_argument("--end_date", type=str, help="End date for paper filtering")
-    # args = parser.parse_args()
-
-    # if args.start_date and args.end_date:
-    #     start_date = datetime.strptime(args.start_date, "%Y-%m-%d")
-    #     end_date = datetime.strptime(args.end_date, "%Y-%m-%d")
-    # elif not args.start_date and not args.end_date:
-    #     end_date = datetime.today()
-    #     start_date = end_date - timedelta(days=2*365)
-    # else:
-    #     raise ValueError("Both start_date and end_date must be provided or neither.")
-
-    # is_in_date_range = lambda x: PaperFilter.inside_date_range(x, start_date, end_date, first_version=True)

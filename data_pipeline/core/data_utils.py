@@ -108,6 +108,7 @@ class EntryExtractor:
     def extract_title(entry_data, max_chars: int = 250):
         """Extracts the title from the entry data."""
         title = entry_data.get("title").strip()
+        title = textify(title)
         if max_chars is not None and len(title) > max_chars:
             front = title[:max_chars // 2]
             back = title[-max_chars // 2:]
