@@ -27,6 +27,7 @@ CREATE INDEX researcher_name_idx ON researcher(name);
 CREATE TABLE paper (
     arxiv_id TEXT PRIMARY KEY,
     topic_id INT REFERENCES topic(id) ON DELETE SET NULL,
+    topic_from_llm TEXT,
     title TEXT NOT NULL,
     abstract TEXT,
     keywords TEXT, -- Added keywords attribute

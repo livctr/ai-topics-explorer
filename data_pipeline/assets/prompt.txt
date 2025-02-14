@@ -1,62 +1,44 @@
-CS Topics Taxonomy
-```
 Theory
-- Computation & Complexity Theory
 - Algorithms & Data Structures
-- Formal Methods
+- Computation & Complexity Theory
 - Cryptography
+- Formal Methods
 - Game Theory & Economics
 Systems
-- Operating Systems
-- Distributed Systems
 - Computer Architecture
-- Networking
-- High-Performance & Parallel Computing
+- Distributed Systems
 - Embedded & Real-Time Systems
+- High-Performance & Parallel Computing
+- Networking
+- Operating Systems
 Software
-- Software Engineering
-- Programming Languages
-- Security
-- Software+X
 - Graphics
 - Human-Computer Interaction
+- Programming Languages
+- Security
+- Software Engineering
+- Software+X
 Data Management
-- Databases
 - Big Data
+- Databases
 - Information Retrieval
 - Knowledge Graphs & Information Networks
 AI
-- Learning Theory
-- Natural Language Processing
-- Computer Vision
-- Reinforcement Learning
-- Generative AI
-- Automated Reasoning
 - AI Robustness & Security
+- Computer Vision
+- Generative AI
+- Learning Theory
 - Multimodal AI
+- Natural Language Processing
+- Reinforcement Learning
 Interdisciplinary Areas
-- AI+Science
-- AI+Healthcare/Medicine
-- AI+Business
 - AI+Art
-- AI+Law
+- AI+Business
 - AI+Education
+- AI+Healthcare/Medicine
+- AI+Law
+- AI+Science
 - AI+Sustainability
-- Robotics & Control
 - Computational Finance
 - Quantum Computing
-```
-
-You are given a comma-delimited list of keywords sorted from most to least paper-specific. Your task is to classify this list into one topic from the provided taxonomy.
-
-Rules
-(1) Domain-Specific AI: If the keywords include terms like "Large Language Model" applied to a specific domain, classify them as `AI+X` (where X represents the domain).
-
-(2) Additional Subtopic Requirement: For classifications that fall into one of
-`Software+X`, `Natural Language Processing`, `Computer Vision`, `Generative AI`, `AI+Science`, 
-In addition to the topic, assign a subtopic from the taxonomy. For example:
-- For `Natural Language Processing`, possible subtopics include `LLM Pretraining` or `LLM Post-training`.
-- For `Computer Vision`, possible subtopics include `Video Understanding` or `Object Detection`.
-
-Output Format:
-<topic:subtopic>
+- Robotics & Control
