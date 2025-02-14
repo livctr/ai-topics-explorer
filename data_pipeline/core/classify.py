@@ -21,65 +21,12 @@ keyword_extraction_template = PromptTemplate(
     )
 )
 
+with open("assets/taxonomy.txt", 'r') as f:
+    template = f.read() 
+
 abstract_classification_template = PromptTemplate(
     input_variables=["abstract"],
-    template=(
-"""
-CS Topics Taxonomy
-```
-Theory:Algorithms & Data Structures
-Theory:Computation & Complexity Theory
-Theory:Cryptography
-Theory:Formal Methods
-Theory:Game Theory & Economics
-Systems:Computer Architecture
-Systems:Databases
-Systems:Distributed Systems
-Systems:Embedded & Real-Time Systems
-Systems:High-Performance & Parallel Computing
-Systems:Networking
-Systems:Operating Systems
-Software:Graphics
-Software:Human-Computer Interaction
-Software:Programming Languages
-Software:Security
-Software:Software Engineering
-AI:AI Robustness & Security
-AI:Computer Vision:3D Vision & Scene Understanding
-AI:Computer Vision:Image & Video Understanding
-AI:Computer Vision:Recognition & Detection
-AI:Generative AI:Diffusion Models
-AI:Generative AI:Architectures
-AI:Generative AI:Learning & Representation Methods
-AI:Information Retrieval
-AI:Knowledge Graphs & Information Networks
-AI:Learning Theory
-AI:Multimodal AI
-AI:Natural Language Processing:LLM Pre-training
-AI:Natural Language Processing:LLM Post-training
-AI:Natural Language Processing:Science of LLMs
-AI:Reinforcement Learning
-AI:Time Series
-Interdisciplinary Areas
-Interdisciplinary Areas:CS+Art
-Interdisciplinary Areas:CS+Business
-Interdisciplinary Areas:CS+Education
-Interdisciplinary Areas:CS+Healthcare/Medicine
-Interdisciplinary Areas:CS+Law
-Interdisciplinary Areas:CS+Science
-Interdisciplinary Areas:CS+Sustainability
-Interdisciplinary Areas:Computational Finance
-Interdisciplinary Areas:Quantum Computing
-Interdisciplinary Areas:Robotics & Control
-```
-
-Each line in the taxonomy is a class. Output the exact string of the best-matching class.
-
-If there are no good matches (very rare), create your own tag.
-
-{abstract}
-"""
-    )
+    template=template
 )
 
 
@@ -172,19 +119,41 @@ def fill_in_topic_from_llm_in_db(llm: ChatOpenAI,
     cur.close()
     conn.close()
 
+    
+def classify_paper_into_topic_with_llm(
+    model: str = "gpt-4o-mini",
+    temperature: float = 0.0,
+    max_completion_tokens: int = 40,
+    limit: int = 1000,
+    sample_freq: int = 200,
+    cost_per_mil_input_token: float = 0.15,
+    cost_per_mil_output_token: float = 0.6
+) -> None:
+    """
+    Classify papers into topics using an LLM and update the database.
 
+    Parameters:
+        model (str): LLM model name (default "gpt-4o-mini").
+        temperature (float): Sampling temperature (default 0.0).
+        max_completion_tokens (int): Max tokens in response (default 40).
+        limit (int): Max papers per call
+        sample_freq (int): Number of papers per print update (default 200).
+        cost_per_mil_input_token (float): Cost per 1e6 input tokens (for printing)
+        cost_per_mil_output_token (float): Cost per 1e6 output tokens (for printing)
 
-# To run the async function:
-if __name__ == "__main__":
-    llm = ChatOpenAI(model="gpt-4o-mini",
-                     temperature=0.0,
-                     max_completion_tokens=40
+    Returns:
+        None
+    """
+    llm = ChatOpenAI(
+        model=model,
+        temperature=temperature,
+        max_completion_tokens=max_completion_tokens
     )
-    cost_per_mil_input_tokens = 0.15  # cached can be x2 cheaper
-    cost_per_mil_output_tokens = 0.6
 
-    fill_in_topic_from_llm_in_db(llm,
-                                 limit=50,
-                                 sample_freq=1,
-                                 cost_per_mil_input_token=cost_per_mil_input_tokens,
-                                 cost_per_mil_output_token=cost_per_mil_output_tokens)
+    fill_in_topic_from_llm_in_db(
+        llm,
+        limit=limit,
+        sample_freq=sample_freq,
+        cost_per_mil_input_token=cost_per_mil_input_token,
+        cost_per_mil_output_token=cost_per_mil_output_token
+    )

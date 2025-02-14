@@ -1,13 +1,10 @@
 from collections import defaultdict
 import json
-import os
 from typing import Callable, List, Dict, Any, Set
 
 from datetime import datetime, timedelta
 import regex as re
 from tqdm import tqdm
-
-from db_utils import execute_query
 
 import psycopg2
 
@@ -293,12 +290,24 @@ def update_paper_and_writes(
     return seen_arxiv_ids
 
 
-def main(
+def ingest_arxiv_info(
          author_tracking_period_months: int = 24,
          author_num_papers_enter_threshold: int = 7,
-         author_num_papers_keep_threshold: int = 3,
-         paper_tracking_period_months: int = 12,
-         ):
+         author_num_papers_keep_threshold: int = 1,
+         paper_tracking_period_months: int = 2,
+         ) -> None:
+    """
+    Populates the database using the Kaggle metadata dataset.
+
+    Parameters:
+    - author_tracking_period_months: length of author track record
+    - author_num_papers_enter_threshold: number of publications needed in 
+        `author_tracking_period_months` to enter into database
+    - author_num_papers_keep_threshold: number of publications need in
+        `author_tracking_period_months` to be kept in the database
+    - paper_tracking_period_months: includes only recent papers with the first
+        version submitted within this many months
+    """
 
     # Track authors who've published the criteria number of papers in the last year
     today = datetime.today()
@@ -320,56 +329,27 @@ def main(
     conn = return_conn()
     try:
         with conn.cursor() as cur:
-            # Ensure that the processing_state table exists.
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS processing_state (
-                    step VARCHAR(255) PRIMARY KEY,
-                    done BOOLEAN NOT NULL,
-                    updated_at TIMESTAMP NOT NULL
-                );
-            """)
 
-            # Check if the research and paper updates have already been executed
-            cur.execute(
-                "SELECT done FROM processing_state WHERE step = %s", 
-                ('research_and_paper_updated',)
-            )
-            state_row = cur.fetchone()
+            # Perform the updates
+            update_researcher(cur,
+                                researcher_paper_count,
+                                enter_threshold=author_num_papers_enter_threshold,
+                                keep_threshold=author_num_papers_keep_threshold)
+            del researcher_paper_count
 
-            # TODO flip the state once topics are produced
-            if False:  # state_row and state_row[0]:
-                print("Researcher and paper updates already performed. Skipping updates.")
-            else:
-                # Perform the updates
-                update_researcher(cur,
-                                  researcher_paper_count,
-                                  enter_threshold=author_num_papers_enter_threshold,
-                                  keep_threshold=author_num_papers_keep_threshold)
-                del researcher_paper_count
-
-                paper_start_date = today - timedelta(days=paper_tracking_period_months*30)
-                update_paper_and_writes(cur, FILTERED_PATH, [
-                    lambda x: PaperFilter.inside_date_range(
-                        x, paper_start_date, today, first_version=True)
-                ])
-
-                # Save the state that these updates are done.
-                cur.execute("""
-                    INSERT INTO processing_state (step, done, updated_at)
-                    VALUES (%s, %s, %s)
-                    ON CONFLICT (step)
-                    DO UPDATE SET done = EXCLUDED.done, updated_at = EXCLUDED.updated_at
-                """, ('research_and_paper_updated', True, datetime.now()))
-                print("Updates executed and state saved.")
+            paper_start_date = today - timedelta(days=paper_tracking_period_months*30)
+            update_paper_and_writes(cur, FILTERED_PATH, [
+                lambda x: PaperFilter.inside_date_range(
+                    x, paper_start_date, today, first_version=True)
+            ])
 
             conn.commit()
     finally:
         conn.close()
-    
 
 
 if __name__ == "__main__":
-    main(
+    ingest_arxiv_info(
         author_tracking_period_months=24,
         author_num_papers_enter_threshold=7,
         author_num_papers_keep_threshold=1,
