@@ -9,8 +9,8 @@ export type TopicNode = Topic & {
 
 interface TopicsTreeProps {
   topicsTree: TopicNode[];
-  selectedTopic: [number, string];
-  setSelectedTopic: (topic: [number, string]) => void;
+  selectedTopic: Topic;
+  setSelectedTopic: (topic: Topic) => void;
   setLoading: (loading: boolean) => void;
   setError: (error: string) => void;
 }
@@ -60,7 +60,7 @@ const TopicsTree: React.FC<TopicsTreeProps> = ({
   const handleTopicClick = (topic: Topic, e: React.MouseEvent) => {
     // Prevent event bubbling from nested clickable elements.
     e.stopPropagation();
-    setSelectedTopic([topic.id, topic.name]);
+    setSelectedTopic(topic);
     if (!topic.is_leaf) {
       toggleExpand(topic.id);
     }
@@ -94,7 +94,7 @@ const TopicsTree: React.FC<TopicsTreeProps> = ({
               </span>
             </span>
           )}
-          {node.id === selectedTopic[0] ? (
+          {node.id === selectedTopic.id ? (
             <span className="topic-name">
               <strong>{node.name}</strong>
             </span>

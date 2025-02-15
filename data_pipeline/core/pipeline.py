@@ -21,7 +21,6 @@ def init_db_if_needed(cur):
         CREATE TABLE IF NOT EXISTS topic (
             id INT PRIMARY KEY,
             name TEXT NOT NULL,
-            description TEXT, -- markdown
             parent_id INT REFERENCES topic(id) ON DELETE SET NULL,
             level INT CHECK (level BETWEEN 1 AND 4),
             is_leaf BOOLEAN NOT NULL

@@ -11,7 +11,13 @@ import axios from "axios";
 
 
 const App: React.FC = () => {
-  const [selectedTopic, setSelectedTopic] = useState<[number, string]>([-1, ""]);
+  const [selectedTopic, setSelectedTopic] = useState<Topic>({
+    id: -1,
+    name: "",
+    parent_id: null,
+    is_leaf: false,
+    level: -1,
+  });
   const [loading, setLoading] = useState<boolean>(false);
   const [error, setError] = useState<string | null>(null);
   const [fetched, setFetched] = useState<boolean>(false);
@@ -54,7 +60,10 @@ const App: React.FC = () => {
             <a href="https://www.kaggle.com/datasets/Cornell-University/arxiv">
               Kaggle
             </a>
-            .
+            . The topic taxonomy on the left is the result of asking{" "}
+            <a href="https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/">gpt-4o-mini
+            </a>{" "}
+            to classify papers into topics.
           </p>
         </div>
       </header>

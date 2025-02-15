@@ -1,7 +1,6 @@
 type Topic = {
   id: number;
   name: string;
-  description: string;
   parent_id: number | null;
   is_leaf: boolean;
   level: number;

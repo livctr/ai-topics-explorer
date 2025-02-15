@@ -1,12 +1,13 @@
 import { useState, useEffect } from "react";
-import MarkdownContent from "./MarkdownContent";
 import ResearchersList, { Researcher, WorksIn } from "./ResearchersList";
+import PapersList, { Paper } from "./PapersList";
 import { Topic } from "../types/Topic";
 import { BACKEND } from "../const";
+import axios from "axios";
 
 interface InfoPanelProps {
   topics: Topic[];
-  selectedTopic: [number, string];
+  selectedTopic: Topic;
   loading: boolean;
   error: string | null;
 }
@@ -17,97 +18,106 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
   loading,
   error,
 }) => {
-  const selectedTopicId = selectedTopic[0];
-  const selectedTopicName = selectedTopic[1];
 
-  // When activeSection is null, we show the description.
-  // When activeSection === "researchers", we show the researchers view.
-  const [activeSection, setActiveSection] = useState<"researchers" | null>(
-    null
-  );
-
-  // Cache dictionary mapping topic ID to its description.
-  const [descDict, setDescDict] = useState<Record<number, string>>({});
+  // activeSection can be either "papers" or "researchers".
+  const [activeSection, setActiveSection] = useState<"papers" | "researchers">("papers");
 
   // Cache for researchers and works_in data.
   const [researchers, setResearchers] = useState<Researcher[] | null>(null);
   const [worksIn, setWorksIn] = useState<WorksIn[] | null>(null);
 
-  // Build description dictionary from topics.
+  // Cache for papers and paper_topics data.
+  const [papers, setPapers] = useState<Paper[] | null>(null);
+
   useEffect(() => {
-    if (topics.length > 0) {
-      const dict: Record<number, string> = {};
-      topics.forEach((topic) => {
-        dict[topic.id] = topic.description;
-      });
-      setDescDict(dict);
-    }
-  }, [topics]);
+    handlePapersClick(); // simulate a click on `Papers` upon load
+  }, []);
 
   // Reset the view when the selected topic changes.
   useEffect(() => {
-    setActiveSection(null);
-  }, [selectedTopicId]);
+    // Reset to "papers" view when the topic changes.
+    setActiveSection("papers");
+  }, [selectedTopic]);
 
-  // Toggle the researchers view. When turning it on for the first time, fetch researchers & works_in.
-  const handleButtonClick = async () => {
-    if (activeSection === "researchers") {
-      setActiveSection(null);
-    } else {
-      if (!researchers || !worksIn) {
-        try {
-          const [resResearchers, resWorksIn] = await Promise.all([
-            fetch(`${BACKEND}/researchers`).then((r) => r.json()),
-            fetch(`${BACKEND}/works_in`).then((r) => r.json()),
-          ]);
-          setResearchers(resResearchers);
-          setWorksIn(resWorksIn);
-        } catch (err) {
-          console.error("Error fetching researchers or works_in:", err);
-        }
+  // Handle switching to the Researchers view.
+  const handleResearchersClick = async () => {
+    if (!researchers || !worksIn) {
+      try {
+        const [resResearchers, resWorksIn] = await Promise.all([
+          (await axios.get<Researcher[]>(`${BACKEND}/researchers`)),
+          (await axios.get<WorksIn[]>(`${BACKEND}/works_in`)),
+        ]);
+        setResearchers(resResearchers.data);
+        setWorksIn(resWorksIn.data);
+      } catch (err) {
+        console.error("Error fetching researchers or works_in:", err);
       }
-      setActiveSection("researchers");
     }
+    setActiveSection("researchers");
+  };
+
+  // Handle switching to the Papers view.
+  const handlePapersClick = async () => {
+    if (!papers) {
+      try {
+        const response = await axios.get<Paper[]>(`${BACKEND}/papers`);
+        const resPapers = response.data;
+        console.log(resPapers);
+        setPapers(resPapers);
+      } catch (err) {
+        console.error("Error fetching papers or paper_topics:", err);
+      }
+    }
+    setActiveSection("papers");
   };
 
   return (
     <div className="info-panel">
-      {selectedTopicName === "" && <h3>Select a topic to begin.</h3>}
-      {selectedTopicName !== "" && (
+      {selectedTopic.name === "" && <h3>Select a topic to begin.</h3>}
+      {selectedTopic.name !== "" && (
         <>
           <div className="info-panel-header">
-            <h3>{selectedTopicName}</h3>
-            <button
-              onClick={handleButtonClick}
-              className={activeSection === "researchers" ? "active-button" : ""}
-            >
-              Researchers
-            </button>
+            <h3>{selectedTopic.name}</h3>
+            <div className="toggle-buttons">
+              <button
+                onClick={handlePapersClick}
+                className={activeSection === "papers" ? "active-button" : ""}
+                style={{ marginRight: "10px" }} // Gap added here
+              >
+                Papers
+              </button>
+              <button
+                onClick={handleResearchersClick}
+                className={activeSection === "researchers" ? "active-button" : ""}
+              >
+                Researchers
+              </button>
+            </div>
           </div>
 
           <div className="info-panel-content">
             {activeSection === "researchers" ? (
-              // Only render ResearchersList when data is available.
+              // Render ResearchersList when the researchers view is active.
               researchers && worksIn ? (
                 <ResearchersList
                   topics={topics}
-                  selectedTopicName={selectedTopicName}
-                  selectedTopicID={selectedTopicId}
+                  selectedTopic={selectedTopic}
                   researchers={researchers}
                   worksIn={worksIn}
                 />
               ) : (
-                <p>Loading researchers...</p>
+                <p>No researchers found...</p>
               )
             ) : (
-              // Default view: show the topic description.
-              <>
-                {descDict[selectedTopicId] ? (
-                  <MarkdownContent markdown={descDict[selectedTopicId]} />
-                ) : (
-                  <p>No description available!</p>
-                )}
-              </>
+              // Render PapersList when the papers view is active.
+              papers ? (
+                <PapersList
+                  selectedTopic={selectedTopic}
+                  papers={papers}
+                />
+              ) : (
+                <p>No papers found...</p>
+              )
             )}
           </div>
         </>

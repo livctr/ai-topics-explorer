@@ -76,7 +76,6 @@ app.get("/topics", async (req, res) => {
 });
 
 
-
 /**
  * Converts a flat list of topics into a hierarchical order using DFS.
  * @param {Array} topics - The flat list of topics from the database.
@@ -138,7 +137,7 @@ app.get("/researchers", async (req, res) => {
   console.log("Hit! researchers");
   try {
     const query = `
-      SELECT id, name, link, affiliation
+      SELECT id, name, link, affiliation, pub_count
       FROM researcher
     `;
     const result = await pool.query(query);
@@ -148,6 +147,36 @@ app.get("/researchers", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
+
+app.get("/papers", async (req, res) => {
+  console.log("Hit! papers");
+  try {
+    // top 50 papers for each topic
+    const query = `
+        WITH ranked_papers AS (
+          SELECT
+            arxiv_id,
+            title,
+            topic_id,
+            ROW_NUMBER() OVER(PARTITION BY topic_id ORDER BY date DESC) AS rn
+          FROM paper
+          WHERE topic_id IS NOT NULL
+        )
+        SELECT
+          arxiv_id,
+          title,
+          topic_id
+        FROM ranked_papers
+        WHERE rn <= 50;
+    `;
+    const result = await pool.query(query);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching papers:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
 
 // Start server
 app.listen(port, () => {
