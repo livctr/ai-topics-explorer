@@ -15,8 +15,6 @@ const App: React.FC = () => {
     is_leaf: false,
     level: -1,
   });
-  const [loading, setLoading] = useState<boolean>(false);
-  const [error, setError] = useState<string | null>(null);
   const [fetched, setFetched] = useState<boolean>(false);
   const [topics, setTopics] = useState<Topic[]>([]);
   const [tree, setTree] = useState<TopicNode[]>([]);
@@ -26,7 +24,6 @@ const App: React.FC = () => {
 
   const fetchTopicsTreeAndPapers = async () => {
     if (fetched) return;
-    setLoading(true);
     try {
       const [resTopics, resPapers] = await Promise.all([
         axios.get<Topic[]>(`${BACKEND}/topics`),
@@ -58,9 +55,6 @@ const App: React.FC = () => {
       setFetched(true);
     } catch (err) {
       console.error("Failed to load topics:", err);
-      setError("Failed to load topics");
-    } finally {
-      setLoading(false);
     }
   };
 
