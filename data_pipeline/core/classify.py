@@ -3,7 +3,7 @@ from tqdm import tqdm
 from langchain_core.prompts import PromptTemplate
 from langchain_openai import ChatOpenAI
 
-from data_pipeline.core.db_utils import return_conn
+from db_utils import return_conn
 from core.data_utils import get_chat_completion
 
 

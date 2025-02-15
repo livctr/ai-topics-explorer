@@ -13,8 +13,8 @@ from psycopg2.extras import execute_values
 
 from core.data_utils import EntryExtractor, PaperFilter
 
-SNAPSHOT_PATH = "./data/arxiv-metadata-oai-snapshot.json"
-FILTERED_PATH = "./data/arxiv-metadata-oai-snapshot-filtered.json"
+SNAPSHOT_PATH = "~/data/arxiv_data/arxiv-metadata-oai-snapshot.json"
+FILTERED_PATH = "~/data/arxiv_data/arxiv-metadata-oai-snapshot-filtered.json"
 
 
 def filter_papers(in_path: str, out_path: str, paper_filters: List[Callable[[Dict[str, Any]], bool]]):

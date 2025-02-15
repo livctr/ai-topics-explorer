@@ -1,6 +1,6 @@
 from collections import Counter
 
-from data_pipeline.core.db_utils import return_conn
+from db_utils import return_conn
 
 
 def determine_topic_set(new_topic_threshold: int = 3):

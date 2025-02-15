@@ -1,6 +1,6 @@
 #!/bin/bash
 
-DATA_DIR="./data"
+DATA_DIR="~/data/arxiv_data"
 PATTERN="arxiv-*.json"
 
 # Check if any matching files exist

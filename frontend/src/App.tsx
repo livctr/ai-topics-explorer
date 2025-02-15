@@ -110,15 +110,11 @@ const App: React.FC = () => {
           topicsTree={tree}
           selectedTopic={selectedTopic}
           setSelectedTopic={setSelectedTopic}
-          setLoading={setLoading}
-          setError={setError}
         />
         <InfoPanel
           topics={topics}
           papers={papers}
           selectedTopic={selectedTopic}
-          loading={loading}
-          error={error}
         />
       </main>
 

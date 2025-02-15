@@ -9,16 +9,12 @@ interface InfoPanelProps {
   topics: Topic[];
   papers: Paper[];
   selectedTopic: Topic;
-  loading: boolean;
-  error: string | null;
 }
 
 const InfoPanel: React.FC<InfoPanelProps> = ({
   topics,
   papers,
   selectedTopic,
-  loading,
-  error,
 }) => {
 
   // activeSection can be either "papers" or "researchers".

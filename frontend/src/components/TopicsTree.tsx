@@ -11,16 +11,12 @@ interface TopicsTreeProps {
   topicsTree: TopicNode[];
   selectedTopic: Topic;
   setSelectedTopic: (topic: Topic) => void;
-  setLoading: (loading: boolean) => void;
-  setError: (error: string) => void;
 }
 
 const TopicsTree: React.FC<TopicsTreeProps> = ({
   topicsTree,
   selectedTopic,
   setSelectedTopic,
-  setLoading,
-  setError,
 }) => {
   const [expandedTopics, setExpandedTopics] = useState<Set<number>>(new Set());
 
