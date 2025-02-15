@@ -115,7 +115,7 @@ def main():
     parser.add_argument(
         "--author-num-papers-keep-threshold",
         type=int,
-        default=2,
+        default=0,
         help="Minimum number of papers required for an author to be tracked."
     )
     parser.add_argument(

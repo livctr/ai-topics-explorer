@@ -109,6 +109,8 @@ const ResearchersList: React.FC<ResearchersListProps> = ({
   }
 
   return (
+    <>
+    <p><em>The number inside the parentheses is the number of publications found in roughly the past two years.</em></p>
     <ul className="researchers-list list-start">
       {sortedResearchers.map((researcher) => (
         <li
@@ -163,6 +165,7 @@ const ResearchersList: React.FC<ResearchersListProps> = ({
         </li>
       ))}
     </ul>
+    </>
   );
 };
 

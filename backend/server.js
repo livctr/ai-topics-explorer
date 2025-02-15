@@ -30,7 +30,6 @@ app.get("/", (req, res) => {
  * `/topics?researcher_id=ID`.
  */
 app.get("/topics", async (req, res) => {
-  console.log("Hit! topics");
   try {
     const researcherID = req.query.researcher_id
       ? parseInt(req.query.researcher_id)
@@ -118,7 +117,6 @@ function orderTopicsHierarchically(topics) {
  * Returns a list of researchers working in the given topic, limited to 50.
  */
 app.get("/works_in", async (req, res) => {
-  console.log("Hit! works_in");
   try {
     const query = `
       SELECT topic_id, researcher_id, score
@@ -134,7 +132,6 @@ app.get("/works_in", async (req, res) => {
 });
 
 app.get("/researchers", async (req, res) => {
-  console.log("Hit! researchers");
   try {
     const query = `
       SELECT id, name, link, affiliation, pub_count
@@ -149,7 +146,6 @@ app.get("/researchers", async (req, res) => {
 });
 
 app.get("/papers", async (req, res) => {
-  console.log("Hit! papers");
   try {
     // top 50 papers for each topic
     const query = `
@@ -158,6 +154,7 @@ app.get("/papers", async (req, res) => {
             arxiv_id,
             title,
             topic_id,
+            date,
             ROW_NUMBER() OVER(PARTITION BY topic_id ORDER BY date DESC) AS rn
           FROM paper
           WHERE topic_id IS NOT NULL
@@ -165,7 +162,8 @@ app.get("/papers", async (req, res) => {
         SELECT
           arxiv_id,
           title,
-          topic_id
+          topic_id,
+          date
         FROM ranked_papers
         WHERE rn <= 50;
     `;

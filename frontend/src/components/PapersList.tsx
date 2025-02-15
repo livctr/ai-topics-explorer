@@ -5,6 +5,7 @@ export interface Paper {
   arxiv_id: string;
   title: string;
   topic_id: number;
+  date: Date;
 }
 
 interface PapersListProps {
@@ -50,7 +51,7 @@ const PapersList: React.FC<PapersListProps> = ({
             target="_blank"
             rel="noopener noreferrer"
           >
-            {paper.title}
+            {paper.title} ({paper.date.toLocaleDateString()})
           </a>
         </li>
       ))}

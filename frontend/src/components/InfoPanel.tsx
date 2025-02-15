@@ -7,6 +7,7 @@ import axios from "axios";
 
 interface InfoPanelProps {
   topics: Topic[];
+  papers: Paper[];
   selectedTopic: Topic;
   loading: boolean;
   error: string | null;
@@ -14,6 +15,7 @@ interface InfoPanelProps {
 
 const InfoPanel: React.FC<InfoPanelProps> = ({
   topics,
+  papers,
   selectedTopic,
   loading,
   error,
@@ -26,18 +28,16 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
   const [researchers, setResearchers] = useState<Researcher[] | null>(null);
   const [worksIn, setWorksIn] = useState<WorksIn[] | null>(null);
 
-  // Cache for papers and paper_topics data.
-  const [papers, setPapers] = useState<Paper[] | null>(null);
-
-  useEffect(() => {
-    handlePapersClick(); // simulate a click on `Papers` upon load
-  }, []);
-
   // Reset the view when the selected topic changes.
   useEffect(() => {
     // Reset to "papers" view when the topic changes.
     setActiveSection("papers");
   }, [selectedTopic]);
+
+  // Handle switching to the Papers view
+  const handlePapersClick = async () => {
+    setActiveSection("papers");
+  }
 
   // Handle switching to the Researchers view.
   const handleResearchersClick = async () => {
@@ -57,19 +57,6 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
   };
 
   // Handle switching to the Papers view.
-  const handlePapersClick = async () => {
-    if (!papers) {
-      try {
-        const response = await axios.get<Paper[]>(`${BACKEND}/papers`);
-        const resPapers = response.data;
-        console.log(resPapers);
-        setPapers(resPapers);
-      } catch (err) {
-        console.error("Error fetching papers or paper_topics:", err);
-      }
-    }
-    setActiveSection("papers");
-  };
 
   return (
     <div className="info-panel">
