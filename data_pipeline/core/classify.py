@@ -1,15 +1,10 @@
-from db_utils import return_conn
-
-import warnings
-
-import psycopg2
 from tqdm import tqdm
 
-from openai import OpenAI
-
 from langchain_core.prompts import PromptTemplate
-
 from langchain_openai import ChatOpenAI
+
+from data_pipeline.core.db_utils import return_conn
+from core.data_utils import get_chat_completion
 
 
 keyword_extraction_template = PromptTemplate(
@@ -28,15 +23,6 @@ abstract_classification_template = PromptTemplate(
     input_variables=["abstract"],
     template=template
 )
-
-
-def get_chat_completion(llm: ChatOpenAI, prompt: str):
-    openai_response = llm.invoke(prompt)
-    return {
-        "content": openai_response.content,
-        "input_tokens": openai_response.usage_metadata['input_tokens'],
-        "output_tokens": openai_response.usage_metadata['output_tokens']
-    }
 
 
 def extract_keywords(llm: ChatOpenAI, abstract: str, max_keywords: int = 7):

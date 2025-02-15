@@ -1,55 +1,88 @@
-import requests
-import psycopg2
-from psycopg2 import sql
+import argparse
 import os
+import requests
+
+from bs4 import BeautifulSoup
+from langchain.prompts import PromptTemplate
+from langchain_openai import ChatOpenAI
 
 from db_utils import return_conn
+from core.data_utils import get_chat_completion
 
-# --- Pretend Google Search API call ---
-def search_author(name: str):
+
+search_results_extraction_template = PromptTemplate(
+    input_variables=["stringified_search_results"],
+    template=(
+        'Given: Search results for "<name> computer science researcher"\n'
+        'Task: Return the most relevant link (personal, research group, university) and affiliation (university, company, non-profit)\n'
+        "- If multiple researchers match, return: `No link | Unknown`\n"
+        "Format: `<link> | <affiliation>`\n\n"
+        "{stringified_search_results}"
+    )
+)
+
+
+def search_author(name: str, llm: ChatOpenAI, max_results: int = 5):
     """
-    Programmatically search Google using the Google Search API.
-    The query is '{name} computer science researcher'.
-    Returns a list of tuples: (link, blurb).
+    researcher name => (link, affiliation) w/ google search + ChatGPT
+
+    Parameters:
+    - name: name of the researcher
+    - max_results: number between 1 and 10 determining how much of the
+        first page ChatGPT sees
+
+    Returns:
+    - a dictionary with keys 
     """
+    assert 1 <= max_results and max_results <= 10
     query = f"{name} computer science researcher"
-    
+
     url = "https://www.googleapis.com/customsearch/v1"
+
     params = {
-        "key": os.environ['GOOGLE_SEARCH_API_KEY'],
-        "cx": os.environ['GOOGLE_SEARCH_CX'],
+        "key": os.environ["GOOGLE_SEARCH_API_KEY"],
+        "cx": os.environ["GOOGLE_SEARCH_CX"],
         "q": query
     }
     response = requests.get(url, params=params)
-    import pdb ; pdb.set_trace()
     results = response.json().get("items", [])
+    results = results[:max_results]  # get top `max_results` results
 
-    print(f"Searching for: {query}")
+    # Extract and clean snippets using BeautifulSoup
+    cleaned_results = []
+    for item in results:
+        title = item.get("title", "No Title")
+        link = item.get("link", "No Link")
+        snippet_html = item.get("htmlSnippet", "")  # This contains raw HTML snippets
 
-    return results
+        # Clean HTML using BeautifulSoup
+        soup = BeautifulSoup(snippet_html, "html.parser")
+        cleaned_snippet = soup.get_text()  # Removes HTML tags
 
-# --- Pretend affiliation and link extraction ---
-def extract_affiliation_and_link(results):
-    """
-    Given a list of tuples (link, blurb), extract the affiliation and link.
-    For this example, we'll simply choose the first result if available.
-    Returns (affiliation, link). If nothing is found, returns ("Unknown", None).
-    """
-    if results:
-        # In a real implementation, you'd use more complex logic to parse the blurb.
-        # Here, we just split the blurb by commas and assume the first part is the affiliation.
-        link, blurb = results[0]
-        affiliation = blurb.split(",")[0] if blurb else "Unknown"
-        return affiliation, link
-    else:
-        return "Unknown", None
+        cleaned_results.append({"title": title, "link": link, "snippet": cleaned_snippet})
 
-# --- Update researchers in the database ---
-def update_researcher_links(limit: int = 100):
+    stringified_search_results = "\n".join(
+        f"- {result['title']} ({result['link']}): {result['snippet']}"
+        for result in cleaned_results
+    )
+    prompt = search_results_extraction_template.invoke(
+        {"name": name,
+        "stringified_search_results": stringified_search_results}
+    )
+
+    return get_chat_completion(llm, prompt)
+
+
+def update_researcher_links(llm: ChatOpenAI, limit: int = 100, max_results: int = 5) -> None:
     """
     Update the affiliation and link fields of researchers.
     Processes researchers in order of decreasing publication count (pub_count),
     up to the specified limit.
+
+    Parameters:
+    - llm: LLM used for decoding the Google search query
+    - limit: Google limits 100 queries for free per day
+    - max_results: just the top `max_results` are considered, between 1 and 10
     """
     conn = return_conn()
     cur = conn.cursor()
@@ -61,10 +94,13 @@ def update_researcher_links(limit: int = 100):
         for researcher in researchers:
             researcher_id, name = researcher
             print(f"Processing researcher: {name} (ID: {researcher_id})")
-            # Search for the researcher on Google.
-            search_results = search_author(name)
-            # Extract affiliation and link.
-            affiliation, link = extract_affiliation_and_link(search_results)
+
+            try:
+                results = search_author(name, llm, max_results=max_results)
+                link, affiliation = tuple([x.strip() for x in results['content'].split('|')])
+            except Exception as e:
+                link, affiliation = None, "Unknown"
+
             print(f"  Found affiliation: {affiliation} | link: {link}")
             # Update the database.
             cur.execute(
@@ -82,9 +118,20 @@ def update_researcher_links(limit: int = 100):
 
 
 if __name__ == "__main__":
-    # Update researchers (default limit 100)
-    # update_researcher_links(limit=100)
-    results = search_author("Carlos Fernandez-Granda")
-    import pdb ; pdb.set_trace()
+    parser = argparse.ArgumentParser(description="Run researcher link extraction with configurable parameters.")
+    
+    parser.add_argument("--model", type=str, default="gpt-4o-mini", help="The LLM model to use.")
+    parser.add_argument("--temperature", type=float, default=0.0, help="Sampling temperature for the LLM.")
+    parser.add_argument("--max_completion_tokens", type=int, default=75, help="Max tokens for the completion.")
+    parser.add_argument("--max_results", type=int, default=5, help="Maximum number of search results to process.")
+    parser.add_argument("--limit", type=int, default=1, help="Limit on the number of researcher links to update.")
 
-    print(results)
+    args = parser.parse_args()
+
+    llm = ChatOpenAI(
+        model=args.model,
+        temperature=args.temperature,
+        max_completion_tokens=args.max_completion_tokens
+    )
+
+    update_researcher_links(llm, limit=args.limit, max_results=args.max_results)

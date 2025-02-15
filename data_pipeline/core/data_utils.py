@@ -1,4 +1,5 @@
 from datetime import datetime
+from langchain_openai import ChatOpenAI
 import regex as re
 
 
@@ -79,6 +80,15 @@ def textify(text: str) -> str:
         text += "."
     
     return text.strip()
+
+
+def get_chat_completion(llm: ChatOpenAI, prompt: str):
+    openai_response = llm.invoke(prompt)
+    return {
+        "content": openai_response.content,
+        "input_tokens": openai_response.usage_metadata['input_tokens'],
+        "output_tokens": openai_response.usage_metadata['output_tokens']
+    }
 
 
 class EntryExtractor:

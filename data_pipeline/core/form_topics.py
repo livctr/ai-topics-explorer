@@ -1,5 +1,7 @@
-from db_utils import return_conn
 from collections import Counter
+
+from data_pipeline.core.db_utils import return_conn
+
 
 def determine_topic_set(new_topic_threshold: int = 3):
     conn = return_conn()
@@ -64,7 +66,7 @@ def determine_topic_set(new_topic_threshold: int = 3):
             arxiv_to_tag[arxiv_id] = "Miscellaneous"
     
     return arxiv_to_tag
-
+ 
 
 def flush_and_fill_topics_in_db(arxiv_to_tag: dict):
     """
