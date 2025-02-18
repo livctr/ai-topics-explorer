@@ -20,6 +20,8 @@ services:
       - backend
     volumes:
       - ./frontend:/app
+    environment:
+      - VITE_BACKEND_URL=http://localhost:3000
 
   data_pipeline:
     build:

@@ -14,10 +14,14 @@ services:
     build:
       context: ./frontend
       dockerfile: Dockerfile.prod
+      args:
+        VITE_BACKEND_URL: "/api"  # Why do I need to add an arg here?
     ports:
       - "80:80"
     depends_on:
       - backend
+    environment:
+      - VITE_BACKEND_URL=/api
 
   data_pipeline:
     build:
@@ -39,3 +43,5 @@ services:
 
 volumes:
   db_data:
+    external:
+      name: cs-topics-explorer_db_data

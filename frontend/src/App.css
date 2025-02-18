@@ -120,7 +120,8 @@ footer {
   padding: 0;
 }
 
-.researchers-list li, .papers-list li {
+.researchers-list li,
+.papers-list li {
   padding: 2px 0; /* Adjust vertical padding as needed */
   line-height: 1.6; /* Consistent line height */
 }
@@ -144,7 +145,6 @@ footer {
   color: var(--primary); /* bright pink */
   text-decoration: underline;
 }
-
 
 .list-start,
 li {
@@ -175,9 +175,8 @@ ul {
 
 .topic-list li > .topic-header:hover .topic-name {
   color: var(--primary); /* bright pink */
+  text-decoration: underline;
 }
-
-
 
 .arrow {
   display: inline-block;
@@ -211,7 +210,6 @@ ul {
 }
 
 .info-panel-content {
-
 }
 
 .info-panel-header h3 {
@@ -252,18 +250,15 @@ footer p {
 }
 /* End footer */
 
-
-
 /* Responsive layout */
 @media screen and (max-width: 1200px) {
-  
   .info-panel-header {
     display: flex;
     flex-wrap: wrap; /* Allow items to wrap if needed */
     align-items: center;
     gap: 10px;
   }
-  
+
   /* Keep title and buttons inline by not forcing 100% width,
      while making the subheader take a full new line */
   .info-panel-header .info-panel-subheader {
