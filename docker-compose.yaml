@@ -23,15 +23,6 @@ services:
     environment:
       - VITE_BACKEND_URL=/api
 
-  data_pipeline:
-    build:
-      context: ./data_pipeline
-      dockerfile: Dockerfile
-    profiles:
-      - data_pipeline
-    depends_on:
-      - database
-
   database:
     image: postgres:17
     env_file:

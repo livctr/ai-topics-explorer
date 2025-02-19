@@ -1,5 +1,7 @@
 from collections import defaultdict
 import json
+import os
+import subprocess
 from typing import Callable, List, Dict, Any, Set
 
 from datetime import datetime, timedelta
@@ -13,8 +15,9 @@ from psycopg2.extras import execute_values
 
 from core.data_utils import EntryExtractor, PaperFilter
 
-SNAPSHOT_PATH = "~/data/arxiv_data/arxiv-metadata-oai-snapshot.json"
-FILTERED_PATH = "~/data/arxiv_data/arxiv-metadata-oai-snapshot-filtered.json"
+DATA_DIR = "~/data/arxiv_data"
+SNAPSHOT_PATH = os.path.join(DATA_DIR, "arxiv-metadata-oai-snapshot.json")
+FILTERED_PATH = os.path.join(DATA_DIR, "arxiv-metadata-oai-snapshot-filtered.json")
 
 
 def filter_papers(in_path: str, out_path: str, paper_filters: List[Callable[[Dict[str, Any]], bool]]):
@@ -295,6 +298,8 @@ def ingest_arxiv_info(
          author_num_papers_enter_threshold: int = 7,
          author_num_papers_keep_threshold: int = 1,
          paper_tracking_period_months: int = 2,
+         redownload: bool = False,
+         cleanup_downloaded: bool = True,
          ) -> None:
     """
     Populates the database using the Kaggle metadata dataset.
@@ -312,6 +317,18 @@ def ingest_arxiv_info(
     # Track authors who've published the criteria number of papers in the last year
     today = datetime.today()
     author_start_date = today - timedelta(days=author_tracking_period_months*30)
+
+    if redownload:
+        # Download the dataset
+        print("Downloading dataset...")
+        os.makedirs(DATA_DIR, exist_ok=True)
+        command = [
+            "kaggle", "datasets", "download", "-f", "arxiv-metadata-oai-snapshot.json",
+            "-p", DATA_DIR, "--unzip", "Cornell-University/arxiv"
+        ]
+        subprocess.run(command, check=True)
+    else:
+        print("Skipping download step.")
 
     filter_papers(
         SNAPSHOT_PATH, 
@@ -346,12 +363,14 @@ def ingest_arxiv_info(
             conn.commit()
     finally:
         conn.close()
-
-
-if __name__ == "__main__":
-    ingest_arxiv_info(
-        author_tracking_period_months=24,
-        author_num_papers_enter_threshold=7,
-        author_num_papers_keep_threshold=1,
-        paper_tracking_period_months=2,
-    )
+    
+    if cleanup_downloaded:
+        try:
+            os.remove(SNAPSHOT_PATH)
+        except OSError as e:
+            print(f"Error: {e.strerror}")
+        
+        try:
+            os.remove(FILTERED_PATH)
+        except OSError as e:
+            print(f"Error: {e.strerror}")

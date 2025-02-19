@@ -48,13 +48,13 @@ services:
       --temperature 0.0
       --max_completion_tokens 75
       --max_results 5
-      --limit 1
+      --limit 100
     env_file:
       - prod.env
     depends_on:
       - database
     restart: "no"
-
+  
   paper_ingestion:
     build: ./data_pipeline
     working_dir: /app
@@ -66,9 +66,9 @@ services:
       --paper_tracking_period_months 6
       --temperature 0.0
       --max_completion_tokens 40
-      --limit 25000
+      --limit 10000
       --sample_freq 200
-      --new_topic_threshold 10
+      --new_topic_threshold 5
     env_file:
       - prod.env
     depends_on:

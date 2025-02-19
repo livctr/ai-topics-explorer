@@ -12,7 +12,7 @@ const pool = new Pool({
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
   database: process.env.DB_NAME,
-  port: process.env.DB_NAME,
+  port: process.env.DB_PORT,
 });
 
 // Middleware
@@ -23,10 +23,9 @@ app.get("/", (req, res) => {
   res.json("Healthy");
 });
 
-
 /**
- * GET  
- * Returns all topics. Can specify a given researcher with 
+ * GET
+ * Returns all topics. Can specify a given researcher with
  * `/topics?researcher_id=ID`.
  */
 app.get("/topics", async (req, res) => {
@@ -73,7 +72,6 @@ app.get("/topics", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 
 /**
  * Converts a flat list of topics into a hierarchical order using DFS.
@@ -174,7 +172,6 @@ app.get("/papers", async (req, res) => {
     res.status(500).json({ error: "Internal Server Error" });
   }
 });
-
 
 // Start server
 app.listen(port, () => {

@@ -163,7 +163,7 @@ def flush_and_fill_topics_in_db(arxiv_to_tag: dict):
         )
     
     conn.commit()
-    print("Updated paper table with new topic_id values.")
+    print("Updated topic table with new topic_id values.")
 
     # Create the materialized view "works_in".
     # The view's purpose is to record, for each topic and researcher,

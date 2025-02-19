@@ -124,6 +124,14 @@ def main():
         default=2,
         help="Number of months for tracking paper activity."
     )
+    parser.add_argument(
+        "--redownload", action="store_true",
+        help="Redownload the data from the arXiv API."
+    )
+    parser.add_argument(
+        "--cleanup_downloaded", action="store_true",
+        help="Clean up the downloaded data."
+    )
 
     # Classification parameters
     parser.add_argument(
@@ -185,7 +193,9 @@ def main():
                     author_tracking_period_months=args.author_tracking_period_months,
                     author_num_papers_enter_threshold=args.author_num_papers_enter_threshold,
                     author_num_papers_keep_threshold=args.author_num_papers_keep_threshold,
-                    paper_tracking_period_months=args.paper_tracking_period_months
+                    paper_tracking_period_months=args.paper_tracking_period_months,
+                    redownload=args.redownload,
+                    cleanup_downloaded=args.cleanup_downloaded,
                 )
                 update_pipeline_state(cur, "ingestion", True)
                 conn.commit()
@@ -193,29 +203,21 @@ def main():
                 print("Ingestion step already completed, skipping.")
 
             # Classification step
-            if not is_step_completed(cur, "classification"):
-                print("Running classification step...")
-                classify_paper_into_topic_with_llm(
-                    temperature=args.temperature,
-                    max_completion_tokens=args.max_completion_tokens,
-                    limit=args.limit,
-                    sample_freq=args.sample_freq,
-                )
-                update_pipeline_state(cur, "classification", True)
-                conn.commit()
-            else:
-                print("Classification step already completed, skipping.")
+            print("Running classification step...")
+            classify_paper_into_topic_with_llm(
+                temperature=args.temperature,
+                max_completion_tokens=args.max_completion_tokens,
+                limit=args.limit,
+                sample_freq=args.sample_freq,
+            )
+            conn.commit()
 
-            # Topic mapping step
-            if not is_step_completed(cur, "topic_mapping"):
-                print("Running topic mapping step...")
-                map_papers_to_topics(
-                    new_topic_threshold=args.new_topic_threshold
-                )
-                update_pipeline_state(cur, "topic_mapping", True)
-                conn.commit()
-            else:
-                print("Topic mapping step already completed, skipping.")
+            print("Running topic mapping step...")
+            map_papers_to_topics(
+                new_topic_threshold=args.new_topic_threshold
+            )
+            update_pipeline_state(cur, "topic_mapping", True)
+            conn.commit()
     finally:
         conn.close()
 

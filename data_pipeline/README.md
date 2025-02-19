@@ -11,15 +11,17 @@ This pipeline ingests ArXiV data and uses an LLM to hypothesize topics and trend
 ```bash
 
 python -m core.pipeline \
-    --author-tracking-period-months 24 \  # Months to track author activity  
-    --author-num-papers-enter-threshold 7 \  # Papers required to start tracking an author  
-    --author-num-papers-keep-threshold 0 \  # Papers required to keep tracking an author  
-    --paper-tracking-period-months 2 \  # Months to track paper activity  
+    --author_tracking_period_months 24 \  # Months to track author activity  
+    --author_num_papers_enter_threshold 7 \  # Papers required to start tracking an author  
+    --author_num_papers_keep_threshold 0 \  # Papers required to keep tracking an author  
+    --paper_tracking_period_months 2 \  # Months to track paper activity
+    --redownload \  # whether to redownload the data
+    --cleanup_downloaded \  # whether to clean up the downloaded data (keep the data in case of using it again)
     --temperature 0.0 \  # LLM randomness control (higher = more creative)  
-    --max-completion-tokens 40 \  # Max tokens in LLM output  
+    --max_completion_tokens 40 \  # Max tokens in LLM output  
     --limit 1000 \  # Max papers classified per call  
-    --sample-freq 50 \  # Frequency of paper classification sampling  
-    --new-topic-threshold 3  # Threshold to define a new research topic  
+    --sample_freq 50 \  # Frequency of paper classification sampling  
+    --new_topic_threshold 3  # Threshold to define a new research topic  
 ```
 
 ### Author Search
