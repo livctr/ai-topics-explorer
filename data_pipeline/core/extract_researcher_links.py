@@ -96,7 +96,6 @@ def update_researcher_links(llm: ChatOpenAI, limit: int = 100, max_results: int 
             DESC LIMIT %s
         """, (limit,))
         researchers = cur.fetchall()
-        print("top 5 researchers w/o links: ", researchers[:5])
 
         for researcher in researchers:
             researcher_id, name = researcher
