@@ -101,25 +101,25 @@ def main():
     )
     # Ingestion parameters
     parser.add_argument(
-        "--author-tracking-period-months",
+        "--author_tracking_period_months",
         type=int,
         default=24,
         help="Number of months for tracking author activity."
     )
     parser.add_argument(
-        "--author-num-papers-enter-threshold",
+        "--author_num_papers_enter_threshold",
         type=int,
         default=7,
         help="Minimum number of papers required for an author to be tracked."
     )
     parser.add_argument(
-        "--author-num-papers-keep-threshold",
+        "--author_num_papers_keep_threshold",
         type=int,
         default=0,
         help="Minimum number of papers required for an author to be tracked."
     )
     parser.add_argument(
-        "--paper-tracking-period-months",
+        "--paper_tracking_period_months",
         type=int,
         default=2,
         help="Number of months for tracking paper activity."
@@ -133,7 +133,7 @@ def main():
         help="Temperature for the LLM (default: 0.0)."
     )
     parser.add_argument(
-        "--max-completion-tokens",
+        "--max_completion_tokens",
         type=int,
         default=40,
         help="Maximum tokens for the LLM's response (default: 40)."
@@ -145,7 +145,7 @@ def main():
         help="Maximum number of papers to classify per call (default: 1000)."
     )
     parser.add_argument(
-        "--sample-freq",
+        "--sample_freq",
         type=int,
         default=50,
         help="Frequency for sampling papers for classification (default: 50)."
@@ -153,7 +153,7 @@ def main():
     
     # Topic mapping parameter
     parser.add_argument(
-        "--new-topic-threshold",
+        "--new_topic_threshold",
         type=int,
         default=3,
         help="Threshold for creating a new topic (default: 3)."
@@ -166,7 +166,7 @@ def main():
         with conn.cursor() as cur:
 
             # Ensure we have tables to fill into
-            init_db_if_needed(cur)
+            # init_db_if_needed(cur)
             
             # Ensure pipeline_state table exists
             cur.execute("""
@@ -185,7 +185,7 @@ def main():
                     author_tracking_period_months=args.author_tracking_period_months,
                     author_num_papers_enter_threshold=args.author_num_papers_enter_threshold,
                     author_num_papers_keep_threshold=args.author_num_papers_keep_threshold,
-                    paper_tracking_period_months=args.paper_tracking_periods_months
+                    paper_tracking_period_months=args.paper_tracking_period_months
                 )
                 update_pipeline_state(cur, "ingestion", True)
                 conn.commit()

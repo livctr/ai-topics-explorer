@@ -60,15 +60,15 @@ services:
     working_dir: /app
     command: >
       python -m core.pipeline 
-      --author-tracking-period-months 24
-      --author-num-papers-enter-threshold 7
-      --author-num-papers-keep-threshold 0
-      --paper-tracking-period-months 2
+      --author_tracking_period_months 24
+      --author_num_papers_enter_threshold 7
+      --author_num_papers_keep_threshold 0
+      --paper_tracking_period_months 6
       --temperature 0.0
-      --max-completion-tokens 40
-      --limit 1000
-      --sample-freq 50
-      --new-topic-threshold 3
+      --max_completion_tokens 40
+      --limit 25000
+      --sample_freq 200
+      --new_topic_threshold 10
     env_file:
       - prod.env
     depends_on:
