@@ -27,8 +27,6 @@ services:
     build:
       context: ./data_pipeline
       dockerfile: Dockerfile
-    profiles:
-      - data_pipeline
     depends_on:
       - database
 
@@ -40,6 +38,42 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+
+  author_ingestion:
+    build: ./data_pipeline
+    working_dir: /app
+    command: >
+      python -m core.extract_researcher_links
+      --model gpt-4o-mini
+      --temperature 0.0
+      --max_completion_tokens 75
+      --max_results 5
+      --limit 1
+    env_file:
+      - prod.env
+    depends_on:
+      - database
+    restart: "no"
+
+  paper_ingestion:
+    build: ./data_pipeline
+    working_dir: /app
+    command: >
+      python -m core.pipeline 
+      --author-tracking-period-months 24
+      --author-num-papers-enter-threshold 7
+      --author-num-papers-keep-threshold 0
+      --paper-tracking-period-months 2
+      --temperature 0.0
+      --max-completion-tokens 40
+      --limit 1000
+      --sample-freq 50
+      --new-topic-threshold 3
+    env_file:
+      - prod.env
+    depends_on:
+      - database
+    restart: "no"
 
 volumes:
   db_data:

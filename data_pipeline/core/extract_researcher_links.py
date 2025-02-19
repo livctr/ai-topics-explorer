@@ -88,8 +88,15 @@ def update_researcher_links(llm: ChatOpenAI, limit: int = 100, max_results: int 
     cur = conn.cursor()
     try:
         # Select researchers ordered by publication count (highest first)
-        cur.execute("SELECT id, name FROM researcher ORDER BY pub_count DESC LIMIT %s", (limit,))
+        cur.execute("""
+            SELECT id, name
+            FROM researcher
+            WHERE affiliation IS NULL
+            ORDER BY pub_count
+            DESC LIMIT %s
+        """, (limit,))
         researchers = cur.fetchall()
+        print("top 5 researchers w/o links: ", researchers[:5])
 
         for researcher in researchers:
             researcher_id, name = researcher
@@ -98,6 +105,10 @@ def update_researcher_links(llm: ChatOpenAI, limit: int = 100, max_results: int 
             try:
                 results = search_author(name, llm, max_results=max_results)
                 link, affiliation = tuple([x.strip() for x in results['content'].split('|')])
+                if affiliation == "Unknown":
+                    raise ValueError("Unknown affiliation")
+                if link == "No link":
+                    raise ValueError("No link")
             except Exception as e:
                 link, affiliation = None, "Unknown"
 
@@ -133,5 +144,5 @@ if __name__ == "__main__":
         temperature=args.temperature,
         max_completion_tokens=args.max_completion_tokens
     )
-
+    
     update_researcher_links(llm, limit=args.limit, max_results=args.max_results)

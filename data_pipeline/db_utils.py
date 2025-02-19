@@ -5,12 +5,14 @@ from dotenv import load_dotenv
 load_dotenv()
 
 def return_conn():
+    print("Connecting to database...")
+    print("Attributes: ", os.getenv("DB_NAME"), os.getenv("DB_USER"), os.getenv("DB_PASSWORD"), os.getenv("DB_HOST"), os.getenv("DB_PORT"))
     conn = psycopg2.connect(
         dbname=os.getenv("DB_NAME"),
         user=os.getenv("DB_USER"),
         password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),  # e.g., "localhost"
-        port=os.getenv("DB_PORT")   # e.g., "5432"
+        host=os.getenv("DB_HOST"),
+        port=os.getenv("DB_PORT")
     )
     return conn
 
