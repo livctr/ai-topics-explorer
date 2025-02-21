@@ -1,16 +1,14 @@
-# 🔍 CS Research Explore Page
+# 🔍 AI Research Explore Page
 
-A web application that allows users to explore computer science research areas, view topic hierarchies, and find researchers working in various fields.
+A web application that allows users to explore AI research areas, view topic hierarchies, and find researchers working in various fields.
 
 ### 🚀 Features
 
-- View hierarchical CS research topics and their descriptions.
-- Find researchers working in a given topic.
-- Expand a researcher’s profile to see all topics they work in.
-- View paper authorship information related to a topic.
+- View hierarchical AI research topics, courtesy of gpt-4o-mini.
+- Find papers and researchers relevant to each topic.
+- Expand a researcher's profile to see all the topics they are working in.
+- Clickable links to get you on your way!
 
 ### 🛠️ Tech Stack
 
-React, TypeScript, Node.js/Express, PostgreSQL, Docker.
-
-### 
+Python, React/TypeScript, Node.js/Express, PostgreSQL, Docker.

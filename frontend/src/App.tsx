@@ -70,10 +70,10 @@ const App: React.FC = () => {
   return (
     <div className="app-container">
       <header>
-        <h1>CS Topics Explorer 2025</h1>
+        <h1>AI Topics Explorer 2025</h1>
         <div className="header-description">
           <p>
-            Explore the latest research in computer science.{" "}
+            Explore the latest research in artificial intelligence.{" "}
             <strong>Click on a topic</strong> to explore its most recent papers
             and the researchers pioneering the field. The data is sourced from{" "}
             <a href="https://arxiv.org/">arXiv</a> publications made publicly
@@ -90,8 +90,7 @@ const App: React.FC = () => {
           </p>
           <p>
             (1) The results below do not disambiguate researchers with the same
-            name. Sometimes, the affiliation will appear as "Unknown" if that's
-            the case.
+            name. An "Unknown" affiliation may appear if that's the case.
           </p>
           <p>
             (2) Affiliation and links are being continuously updated, sourced
@@ -114,7 +113,7 @@ const App: React.FC = () => {
 
       <footer>
         <p>
-          CS Topics Explorer is licensed under the{" "}
+          AI Topics Explorer is licensed under the{" "}
           <a
             href="https://www.apache.org/licenses/LICENSE-2.0"
             target="_blank"
