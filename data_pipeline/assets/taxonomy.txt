@@ -1,53 +1,53 @@
-CS Topics Taxonomy
-```
-Theory:Algorithms & Data Structures
-Theory:Computation & Complexity Theory
-Theory:Cryptography
-Theory:Formal Methods
-Theory:Game Theory & Economics
-Systems:Computer Architecture
-Systems:Databases
-Systems:Distributed Systems
-Systems:Embedded & Real-Time Systems
-Systems:High-Performance & Parallel Computing
-Systems:Networking
-Systems:Operating Systems
-Software:Graphics
-Software:Human-Computer Interaction
-Software:Programming Languages
-Software:Security
-Software:Software Engineering
-AI:AI Robustness & Security
-AI:Computer Vision:3D Vision & Scene Understanding
-AI:Computer Vision:Image & Video Understanding
-AI:Computer Vision:Recognition & Detection
-AI:Generative AI:Diffusion Models
-AI:Generative AI:Architectures
-AI:Generative AI:Learning & Representation Methods
-AI:Information Retrieval
-AI:Knowledge Graphs & Information Networks
-AI:Learning Theory
-AI:Multimodal AI
-AI:Natural Language Processing:LLM Pre-training
-AI:Natural Language Processing:LLM Post-training
-AI:Natural Language Processing:Science of LLMs
-AI:Reinforcement Learning
-AI:Time Series
-Interdisciplinary Areas
-Interdisciplinary Areas:CS+Art
-Interdisciplinary Areas:CS+Business
-Interdisciplinary Areas:CS+Education
-Interdisciplinary Areas:CS+Healthcare/Medicine
-Interdisciplinary Areas:CS+Law
-Interdisciplinary Areas:CS+Science
-Interdisciplinary Areas:CS+Sustainability
-Interdisciplinary Areas:Computational Finance
-Interdisciplinary Areas:Quantum Computing
-Interdisciplinary Areas:Robotics & Control
-```
+AI Topics Taxonomy
+---
+AI+X:AI+Art
+AI+X:AI+Business
+AI+X:AI+Coding
+AI+X:AI+Education
+AI+X:AI+Finance
+AI+X:AI+Healthcare/Medicine
+AI+X:AI+Law
+AI+X:AI+Math
+AI+X:AI+Science
+AI+X:AI+Sustainability
+AI+X:AI+Quantum Computing
+AI+X:AI+Robotics & Control
+Computer Vision:Object Detection & Recognition
+Computer Vision:Image Segmentation
+Computer Vision:Video Understanding
+Computer Vision:3D Vision & Scene Understanding
+Computer Vision:Image & Video generation
+Computer Vision:Humans in Video
+Computer Vision:Multimodality
+Computer Vision:Efficient Vision
+Deep Learning:Architectures
+Deep Learning:Federated Learning
+Deep Learning:Self-Supervised Learning
+Deep Learning:Parameter-Efficient Fine-tuning
+Deep Learning:Knowledge Distillation
+Deep Learning:Time Series
+Deep Learning:Fairness & Bias Mitigation
+Deep Learning:Explainability
+Deep Learning:Conformal Prediction
+Natural Language Processing:Efficient Language Models
+Natural Language Processing:LLM Pre-training
+Natural Language Processing:LLM Alignment
+Natural Language Processing:Multimodal NLP
+Natural Language Processing:Interpretability
+Natural Language Processing:Reasoning
+Natural Language Processing:Robustness & Safety
+Natural Language Processing:Long-Context Handling
+Natural Language Processing:In-Context Learning
+Reinforcement Learning:Efficient Exploration & Sample Efficiency
+Reinforcement Learning:Multi-Agent RL
+Reinforcement Learning:Safe RL
+Reinforcement Learning:Theory
+Probabilistic Methods:Variational Inference
+Probabilistic Methods:Bayesian ML
+Probabilistic Methods:Uncertainty Quantification
+Probabilistic Methods:Causal AI
+---
 
-Each line in the taxonomy is a class. Output the exact string of the best-matching class.
-
-If there are no good matches (very rare), create your own tag.
+Each line in the taxonomy is a class. Output the exact string of the best-matching class. If there are no good matches (very rare), create your own tag.
 
 {abstract}

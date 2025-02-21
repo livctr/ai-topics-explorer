@@ -166,11 +166,19 @@ class EntryExtractor:
 
 class PaperFilter:
 
+    AI_TAGS = ["cs.AI", "cs.LG", "stat.ML", "cs.CL", "cs.CV", "cs.RO", "cs.MA"]
+
     @staticmethod
     def is_cs(entry_data):
         """Returns True if the entry is categorized under CS."""
         categories = EntryExtractor.extract_categories(entry_data)
         return any(re.match(r"cs\.[a-zA-Z]{2}", cat) for cat in categories)
+    
+    @staticmethod
+    def is_ai(entry_data):
+        """Returns True if the entry is categorized under AI."""
+        categories = EntryExtractor.extract_categories(entry_data)
+        return any(cat in PaperFilter.AI_TAGS for cat in categories)
 
     @staticmethod
     def inside_date_range(entry_data, start: datetime, end: datetime, first_version: bool = True):

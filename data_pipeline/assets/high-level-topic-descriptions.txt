@@ -1,0 +1,56 @@
+Computer Vision
+Focuses on visual data processing, including image and video analysis.
+
+Natural Language Processing
+Deals with language understanding, generation, and interaction.
+
+Theory
+Explores theoretical foundations, including generalization and statistical learning.
+
+Deep Learning
+Encompasses neural network architectures like transformers and generative models.
+
+Reinforcement Learning
+Involves learning through interaction, often in robotics and games.
+
+Probabilistic Methods
+Includes Bayesian approaches and uncertainty quantification.
+
+Optimization
+Covers techniques for model training, such as stochastic and distributed methods.
+
+Trustworthy AI
+Addresses fairness, privacy, and interpretability in AI systems.
+
+
+
+
+Agentic AI
+AI+X
+Computer Vision
+Deep Learning
+Generative AI
+Multimodal AI
+Natural Language Processing
+Optimization
+Probabilistic Methods
+Reinforcement Learning
+Theory
+Trustworthy AI
+
+Computer Vision:Object Detection & Recognition
+Computer Vision:Image Segmentation
+Computer Vision:Video Understanding
+Computer Vision:3D Vision & Scene Understanding
+Multimodal AI:Time Series
+AI+X:AI+Art
+AI+X:AI+Business
+AI+X:AI+Education
+AI+X:AI+Finance
+AI+X:AI+Healthcare/Medicine
+AI+X:AI+Law
+AI+X:AI+Science
+AI+X:AI+Sustainability
+AI+X:Computational Finance
+AI+X:AI+Quantum Computing
+AI+X:AI+Robotics & Control

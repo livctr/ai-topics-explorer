@@ -334,7 +334,7 @@ def ingest_arxiv_info(
         SNAPSHOT_PATH, 
         FILTERED_PATH,
         [
-            PaperFilter.is_cs,
+            PaperFilter.is_ai,
             lambda x: PaperFilter.inside_date_range(x, author_start_date, today, first_version=True)
         ]
     )
