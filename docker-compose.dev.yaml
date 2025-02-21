@@ -54,21 +54,24 @@ services:
     depends_on:
       - database
     restart: "no"
-  
+
   paper_ingestion:
     build: ./data_pipeline
     working_dir: /app
+    volumes:
+      - arxiv_data:/app/data
     command: >
       python -m core.pipeline 
       --author_tracking_period_months 24
       --author_num_papers_enter_threshold 7
-      --author_num_papers_keep_threshold 0
+      --author_num_papers_keep_threshold 7
       --paper_tracking_period_months 6
+      --redownload
       --temperature 0.0
       --max_completion_tokens 40
-      --limit 10000
-      --sample_freq 200
-      --new_topic_threshold 5
+      --limit 50
+      --sample_freq 1
+      --new_topic_threshold 20
     env_file:
       - prod.env
     depends_on:
@@ -77,3 +80,4 @@ services:
 
 volumes:
   db_data:
+  arxiv_data:

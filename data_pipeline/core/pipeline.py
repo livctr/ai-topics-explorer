@@ -174,7 +174,7 @@ def main():
         with conn.cursor() as cur:
 
             # Ensure we have tables to fill into
-            # init_db_if_needed(cur)
+            init_db_if_needed(cur)
             
             # Ensure pipeline_state table exists
             cur.execute("""

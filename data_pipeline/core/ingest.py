@@ -15,7 +15,7 @@ from psycopg2.extras import execute_values
 
 from core.data_utils import EntryExtractor, PaperFilter
 
-DATA_DIR = "~/data/arxiv_data"
+DATA_DIR = "/app/data/arxiv_data"
 SNAPSHOT_PATH = os.path.join(DATA_DIR, "arxiv-metadata-oai-snapshot.json")
 FILTERED_PATH = os.path.join(DATA_DIR, "arxiv-metadata-oai-snapshot-filtered.json")
 
@@ -327,17 +327,17 @@ def ingest_arxiv_info(
             "-p", DATA_DIR, "--unzip", "Cornell-University/arxiv"
         ]
         subprocess.run(command, check=True)
+
+        filter_papers(
+            SNAPSHOT_PATH, 
+            FILTERED_PATH,
+            [
+                PaperFilter.is_ai,  # Only AI papers
+                lambda x: PaperFilter.inside_date_range(x, author_start_date, today, first_version=True)
+            ]
+        )
     else:
         print("Skipping download step.")
-
-    filter_papers(
-        SNAPSHOT_PATH, 
-        FILTERED_PATH,
-        [
-            PaperFilter.is_ai,
-            lambda x: PaperFilter.inside_date_range(x, author_start_date, today, first_version=True)
-        ]
-    )
 
     # Get the histogram of researchers and their paper counts
     researcher_paper_count = get_researchers_histogram(FILTERED_PATH)
