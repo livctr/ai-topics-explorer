@@ -15,7 +15,7 @@ python -m core.pipeline \
     --author_num_papers_enter_threshold 7 \  # Papers required to start tracking an author  
     --author_num_papers_keep_threshold 0 \  # Papers required to keep tracking an author  
     --paper_tracking_period_months 2 \  # Months to track paper activity
-    --redownload \  # whether to redownload the data
+    --reingest \  # whether to reingest the data
     --cleanup_downloaded \  # whether to clean up the downloaded data (keep the data in case of using it again)
     --temperature 0.0 \  # LLM randomness control (higher = more creative)  
     --max_completion_tokens 40 \  # Max tokens in LLM output  

@@ -298,7 +298,6 @@ def ingest_arxiv_info(
          author_num_papers_enter_threshold: int = 7,
          author_num_papers_keep_threshold: int = 1,
          paper_tracking_period_months: int = 2,
-         redownload: bool = False,
          cleanup_downloaded: bool = True,
          ) -> None:
     """
@@ -318,26 +317,23 @@ def ingest_arxiv_info(
     today = datetime.today()
     author_start_date = today - timedelta(days=author_tracking_period_months*30)
 
-    if redownload:
-        # Download the dataset
-        print("Downloading dataset...")
-        os.makedirs(DATA_DIR, exist_ok=True)
-        command = [
-            "kaggle", "datasets", "download", "-f", "arxiv-metadata-oai-snapshot.json",
-            "-p", DATA_DIR, "--unzip", "Cornell-University/arxiv"
-        ]
-        subprocess.run(command, check=True)
+    # Download the dataset
+    print("Downloading dataset...")
+    os.makedirs(DATA_DIR, exist_ok=True)
+    command = [
+        "kaggle", "datasets", "download", "-f", "arxiv-metadata-oai-snapshot.json",
+        "-p", DATA_DIR, "--unzip", "Cornell-University/arxiv"
+    ]
+    subprocess.run(command, check=True)
 
-        filter_papers(
-            SNAPSHOT_PATH, 
-            FILTERED_PATH,
-            [
-                PaperFilter.is_ai,  # Only AI papers
-                lambda x: PaperFilter.inside_date_range(x, author_start_date, today, first_version=True)
-            ]
-        )
-    else:
-        print("Skipping download step.")
+    filter_papers(
+        SNAPSHOT_PATH, 
+        FILTERED_PATH,
+        [
+            PaperFilter.is_ai,  # Only AI papers
+            lambda x: PaperFilter.inside_date_range(x, author_start_date, today, first_version=True)
+        ]
+    )
 
     # Get the histogram of researchers and their paper counts
     researcher_paper_count = get_researchers_histogram(FILTERED_PATH)

@@ -20,7 +20,7 @@ def determine_topic_set(new_topic_threshold: int = 3):
     with open("assets/taxonomy.txt", 'r', encoding="utf-8") as f:
         template = f.read()
     # Extract taxonomy tags from the text inside the first set of triple backticks.
-    taxonomy_set = set(x for x in template.split('```')[1].split('\n') if x != '')
+    taxonomy_set = set(x for x in template.split('---')[1].split('\n') if x != '')
     
     # Count occurrences of each tag from the papers.
     tags = [tag for _, tag in rows]

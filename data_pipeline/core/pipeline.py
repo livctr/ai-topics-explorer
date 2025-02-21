@@ -125,8 +125,8 @@ def main():
         help="Number of months for tracking paper activity."
     )
     parser.add_argument(
-        "--redownload", action="store_true",
-        help="Redownload the data from the arXiv API."
+        "--reingest", action="store_true",
+        help="Reingest the data from the arXiv API."
     )
     parser.add_argument(
         "--cleanup_downloaded", action="store_true",
@@ -187,20 +187,16 @@ def main():
             conn.commit()
 
             # Ingestion step
-            # if not is_step_completed(cur, "ingestion"):
             print("Running ingestion step...")
-            ingest_arxiv_info(
-                author_tracking_period_months=args.author_tracking_period_months,
-                author_num_papers_enter_threshold=args.author_num_papers_enter_threshold,
-                author_num_papers_keep_threshold=args.author_num_papers_keep_threshold,
-                paper_tracking_period_months=args.paper_tracking_period_months,
-                redownload=args.redownload,
-                cleanup_downloaded=args.cleanup_downloaded,
-            )
-            update_pipeline_state(cur, "ingestion", True)
-            conn.commit()
-            # else:
-            #     print("Ingestion step already completed, skipping.")
+            if args.reingest:
+                ingest_arxiv_info(
+                    author_tracking_period_months=args.author_tracking_period_months,
+                    author_num_papers_enter_threshold=args.author_num_papers_enter_threshold,
+                    author_num_papers_keep_threshold=args.author_num_papers_keep_threshold,
+                    paper_tracking_period_months=args.paper_tracking_period_months,
+                    cleanup_downloaded=args.cleanup_downloaded,
+                )
+                conn.commit()
 
             # Classification step
             print("Running classification step...")
