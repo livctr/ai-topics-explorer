@@ -359,7 +359,7 @@ def ingest_arxiv_info(
             conn.commit()
     finally:
         conn.close()
-    
+
     if cleanup_downloaded:
         try:
             os.remove(SNAPSHOT_PATH)

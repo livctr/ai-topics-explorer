@@ -86,15 +86,32 @@ const App: React.FC = () => {
             <a href="https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/">
               gpt-4o-mini
             </a>{" "}
-            to classify papers into topics. Also, please note:
+            to classify papers into topics. Also,{" "}
+            <strong>please note the following disclaimers</strong>:
           </p>
           <p>
             (1) The results below do not disambiguate researchers with the same
-            name. An "Unknown" affiliation may appear if that's the case.
+            name. As such, many researchers with the same name could be counted
+            as one person,{" "}
+            <em>
+              artificially inflating their number of publications and hence
+              their rankings
+            </em>
+            .
           </p>
           <p>
-            (2) Affiliation and links are being continuously updated, sourced
-            via Google search. They may not be 100% accurate.
+            (2) Affiliations and links are being continuously updated, sourced
+            via Google search + LLM. They are not 100% accurate and can refer to
+            the wrong person - especially same-name researchers.
+          </p>
+          <p>
+            (3) The coarse criteria for a researcher to be included is having published
+            more than 20+ papers on arXiv in the past 2 years. This criteria
+            ignores the quality of the papers (e.g., acceptance to top
+            conferences) and disadvantages researchers who publish fewer but
+            highly impactful works. While the number of papers is an indicator
+            of productivity, it is not a definite measure of a researcher's
+            overall impact. This criteria is used due to data availability.
           </p>
         </div>
       </header>

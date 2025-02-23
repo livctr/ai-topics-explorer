@@ -56,6 +56,8 @@ services:
     restart: "no"
 
   paper_ingestion:
+    tty: true
+    stdin_open: true
     build: ./data_pipeline
     working_dir: /app
     volumes:
@@ -63,13 +65,13 @@ services:
     command: >
       python -m core.pipeline 
       --author_tracking_period_months 24
-      --author_num_papers_enter_threshold 7
-      --author_num_papers_keep_threshold 7
+      --author_num_papers_enter_threshold 20
+      --author_num_papers_keep_threshold 20
       --paper_tracking_period_months 6
       --temperature 0.0
       --max_completion_tokens 40
-      --limit 10000
-      --sample_freq 200
+      --limit 9000
+      --sample_freq 100
       --new_topic_threshold 20
     env_file:
       - prod.env

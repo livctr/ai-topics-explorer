@@ -67,33 +67,6 @@ def init_db_if_needed(cur):
         );
     """)
 
-    # Create works_in table
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS works_in (
-            topic_id INT REFERENCES topic(id) ON DELETE CASCADE,
-            researcher_id INT REFERENCES researcher(id) ON DELETE CASCADE,
-            score DECIMAL(5, 2),
-            PRIMARY KEY (topic_id, researcher_id)
-        );
-    """)
-
-
-def update_pipeline_state(cur, step: str, completed: bool):
-    cur.execute(
-        """
-        INSERT INTO pipeline_state (step, completed, updated_at)
-        VALUES (%s, %s, %s)
-        ON CONFLICT (step)
-        DO UPDATE SET completed = EXCLUDED.completed, updated_at = EXCLUDED.updated_at
-        """,
-        (step, completed, datetime.now())
-    )
-
-def is_step_completed(cur, step: str) -> bool:
-    cur.execute("SELECT completed FROM pipeline_state WHERE step = %s", (step,))
-    row = cur.fetchone()
-    return row is not None and row[0]
-
 
 def main():
     parser = argparse.ArgumentParser(
@@ -176,14 +149,6 @@ def main():
             # Ensure we have tables to fill into
             init_db_if_needed(cur)
             
-            # Ensure pipeline_state table exists
-            cur.execute("""
-                CREATE TABLE IF NOT EXISTS pipeline_state (
-                    step VARCHAR(255) PRIMARY KEY,
-                    completed BOOLEAN NOT NULL,
-                    updated_at TIMESTAMP NOT NULL
-                );
-            """)
             conn.commit()
 
             # Ingestion step
@@ -212,7 +177,6 @@ def main():
             map_papers_to_topics(
                 new_topic_threshold=args.new_topic_threshold
             )
-            update_pipeline_state(cur, "topic_mapping", True)
             conn.commit()
     finally:
         conn.close()

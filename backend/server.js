@@ -145,7 +145,7 @@ app.get("/researchers", async (req, res) => {
 
 app.get("/papers", async (req, res) => {
   try {
-    // top 50 papers for each topic
+    // top 200 papers for each topic
     const query = `
         WITH ranked_papers AS (
           SELECT
@@ -163,7 +163,7 @@ app.get("/papers", async (req, res) => {
           topic_id,
           date
         FROM ranked_papers
-        WHERE rn <= 50;
+        WHERE rn <= 200;
     `;
     const result = await pool.query(query);
     res.json(result.rows);
