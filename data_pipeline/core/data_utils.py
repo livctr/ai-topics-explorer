@@ -1,6 +1,13 @@
 from datetime import datetime
-from langchain_openai import ChatOpenAI
+# from langchain_openai import ChatOpenAI
 import regex as re
+import os
+
+DATA_DIR = "/gpfs/home/vhl2022/app/data/arxiv_data"
+SNAPSHOT_PATH = os.path.join(DATA_DIR, "arxiv-metadata-oai-snapshot.json")
+FILTERED_PATH = os.path.join(DATA_DIR, "arxiv-metadata-oai-snapshot-filtered.json")
+EMBEDDINGS_PATH = os.path.join(DATA_DIR, "embeddings.pt")
+TOPICS_PATH = os.path.join(DATA_DIR, "topics.json")
 
 
 def _get_lbl_from_name(names):
@@ -82,7 +89,7 @@ def textify(text: str) -> str:
     return text.strip()
 
 
-def get_chat_completion(llm: ChatOpenAI, prompt: str):
+def get_chat_completion(llm: "ChatOpenAI", prompt: str):
     openai_response = llm.invoke(prompt)
     return {
         "content": openai_response.content,

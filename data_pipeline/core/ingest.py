@@ -13,11 +13,7 @@ import psycopg2
 from db_utils import return_conn
 from psycopg2.extras import execute_values
 
-from core.data_utils import EntryExtractor, PaperFilter
-
-DATA_DIR = "/app/data/arxiv_data"
-SNAPSHOT_PATH = os.path.join(DATA_DIR, "arxiv-metadata-oai-snapshot.json")
-FILTERED_PATH = os.path.join(DATA_DIR, "arxiv-metadata-oai-snapshot-filtered.json")
+from core.data_utils import EntryExtractor, PaperFilter, DATA_DIR, SNAPSHOT_PATH, FILTERED_PATH
 
 
 def filter_papers(in_path: str, out_path: str, paper_filters: List[Callable[[Dict[str, Any]], bool]]):
