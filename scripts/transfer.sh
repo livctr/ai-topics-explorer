@@ -1,6 +1,6 @@
 LOCAL_VOLUME="cs-topics-explorer_db_data"
 REMOTE_USER="ubuntu"
-REMOTE_HOST="ec2-44-210-89-253.compute-1.amazonaws.com"
+REMOTE_HOST="ec2-34-238-247-252.compute-1.amazonaws.com"
 SSH_KEY_PEM_FILE="~/.ssh/cs-topics-explorer-server-key.pem"
 
 # Ensures data directory exists
