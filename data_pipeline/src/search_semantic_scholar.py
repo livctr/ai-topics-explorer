@@ -4,7 +4,6 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 from datetime import date, timedelta
-from urllib.parse import urlencode
 from typing import Tuple, Dict, Any
 import time
 from tqdm import tqdm
@@ -157,7 +156,7 @@ def get_high_relevance_papers_by_date(
     for paper in papers[:top_k]:
 
         if 'paperId' not in paper or paper['paperId'] is None or \
-            'authors' not in paper or paper['author'] is None or \
+            'authors' not in paper or paper['authors'] is None or \
             'publicationDate' not in paper or paper['publicationDate'] is None or \
             'title' not in paper or paper['title'] is None:
             continue
@@ -242,11 +241,23 @@ def get_author_info(authors_dict: Dict[str, Any], min_paper_cnt: int = 2) -> Dic
 
     for i in tqdm(range(0, len(author_ids), batch_limit), desc="Fetching author info..."):
         batch_ids = author_ids[i:i + batch_limit]
-        response = requests.post(
+
+        http = Session()
+        http.mount('https://', HTTPAdapter(max_retries=Retry(
+            total=5,
+            backoff_factor=2,
+            status_forcelist=[429, 500, 502, 503, 504],
+            allowed_methods={"HEAD", "GET", "POST", "OPTIONS"}
+        )))
+
+        fields = 'authorId,url,name,affiliations,homepage,hIndex'
+
+        response = http.post(
             'https://api.semanticscholar.org/graph/v1/author/batch',
-            params={'fields': 'authorId,url,name,affiliations,homepage,hIndex'},
+            params={'fields': fields},
             json={"ids": batch_ids}
         )
+
         response.raise_for_status()
         data = response.json()
         for entry in data:
@@ -267,54 +278,3 @@ def get_author_info(authors_dict: Dict[str, Any], min_paper_cnt: int = 2) -> Dic
         time.sleep(15)
 
     return authors_dict_filtered
-
-
-def 
-
-
-# def get_clustering()
-
-
-if __name__ == "__main__":
-
-    # papers_dict, authors_dict = get_high_relevance_papers_by_date(
-    #     date_filter="2025-03-19:2025-04-19",
-    #     fields_of_study="Computer Science"
-    # )
-    # import pdb ; pdb.set_trace()
-    # # Write to json
-    # with open('papers.json', 'w') as f:
-    #     json.dump(papers_dict, f, indent=4)
-    # with open('authors.json', 'w') as f:
-    #     json.dump(authors_dict, f, indent=4)
-
-    with open('papers.json', 'r') as f:
-        papers_dict = json.load(f)
-    with open('authors.json', 'r') as f:
-        authors_dict = json.load(f)
-    import pdb ; pdb.set_trace()
-    authors_dict = get_author_info(authors_dict)
-    with open('authors_filtered.json', 'w') as f:
-        json.dump(authors_dict, f, indent=4)
-    
-
-
-
-    
-
-
-    # print(len(papers))
-
-    # papers = get_high_relevance_papers(num_months=12)
-    # import pdb ; pdb.set_trace()
-    # # Write to JSON file
-    # with open('papers.json', 'w') as f:
-    #     import json
-    #     json.dump(papers, f, indent=4)
-
-    # with open('papers.json', 'r') as f:
-    #     papers = json.load(f)
-
-    # papers = get_high_relevance_papers_2()
-    # import pdb ; pdb.set_trace()
-    # print(len(papers))
