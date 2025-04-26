@@ -15,7 +15,7 @@ services:
       context: ./frontend
       dockerfile: Dockerfile.prod
       args:
-        VITE_BACKEND_URL: "/api"  # Why do I need to add an arg here?
+        VITE_BACKEND_URL: "/api"
     ports:
       - "80:80"
     depends_on:
@@ -31,8 +31,26 @@ services:
       - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $$POSTGRES_USER -d $$POSTGRES_DB"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  loader:
+    build:
+      context: ./data_pipeline
+      dockerfile: Dockerfile
+      target: loader
+    env_file:
+      - prod.env
+    depends_on:
+      database:
+        condition: service_healthy
+    environment:
+      DATABASE_URL: postgres://$${POSTGRES_USER}:$${POSTGRES_PASSWORD}@database:5432/$${POSTGRES_DB}
+    volumes:
+      - ./data:/app/data
 
 volumes:
   db_data:
-    external:
-      name: cs-topics-explorer_db_data

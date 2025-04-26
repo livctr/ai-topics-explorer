@@ -2,9 +2,6 @@ import psycopg2
 from psycopg2.extras import execute_values
 import os
 from dotenv import load_dotenv
-from data_pipeline.src.url_utils import (
-    check_urls_multithreaded
-)
 from datetime import datetime
 
 load_dotenv()
@@ -107,11 +104,8 @@ def build_works_in(
             if paper_id not in paper_to_topic_id or paper_id not in papers_dict:
                 continue
             topic_id = paper_to_topic_id[paper_id]
-            if (author_id, topic_id) not in scores:
-                scores[(author_id, topic_id)] = 0
-            else:
-                num_authors = papers_dict[paper_id].get("numAuthors") or 1
-                scores[(author_id, topic_id)] += 1.0 / num_authors
+            num_authors = papers_dict[paper_id].get("numAuthors") or 1
+            scores[(author_id, topic_id)] = scores.get((author_id, topic_id), 0) + 1.0/num_authors
     works_in_rows = []
     for (author_id, topic_id), score in scores.items():
         works_in_rows.append((author_id, topic_id, score))
@@ -141,11 +135,11 @@ def build_data(
 
 def return_conn():
     conn = psycopg2.connect(
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT")
+        dbname=os.getenv("POSTGRES_DB"),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD"),
+        host=os.getenv("POSTGRES_HOST"),
+        port=os.getenv("POSTGRES_PORT")
     )
     return conn
 
@@ -164,11 +158,11 @@ def init_tables_for_ingestion(cur: psycopg2.extensions.cursor):
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS researcher (
-            id SERIAL PRIMARY KEY,
+            id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             homepage TEXT,
             url TEXT,
-            affiliation TEXT,  -- primary affiliation
+            affiliation TEXT  -- primary affiliation
         );
     """)
 
@@ -190,7 +184,7 @@ def init_tables_for_ingestion(cur: psycopg2.extensions.cursor):
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS works_in (
-            researcher_id INT REFERENCES researcher(id) ON DELETE CASCADE,
+            researcher_id TEXT REFERENCES researcher(id) ON DELETE CASCADE,
             topic_id INT REFERENCES topic(id) ON DELETE CASCADE,
             score FLOAT CHECK (score >= 0),
             PRIMARY KEY (researcher_id, topic_id)
@@ -228,7 +222,7 @@ def update_researchers(
         cur.execute("""
             DELETE FROM researcher
             WHERE id NOT IN (
-                SELECT unnest(%s::int[])
+                SELECT unnest(%s::text[])
             );
         """, (researcher_ids,))
     researcher_query = """
@@ -244,7 +238,13 @@ def insert_papers(
     cur: psycopg2.extensions.cursor,
     paper_rows,
 ):
-    raise NotImplementedError("Need to convert publicationDate to datetime.")
+    paper_dates = [paper_row[4] for paper_row in paper_rows]
+    paper_dates = [datetime.strptime(date_str, "%Y-%m-%d").date() for date_str in paper_dates]
+    paper_rows = [
+        tuple(paper_row[:4]) + (date,) + tuple(paper_row[5:])
+        for paper_row, date in zip(paper_rows, paper_dates)
+    ]
+
     cur.execute("""DELETE FROM paper;""")
     paper_query = """
     INSERT INTO paper (id, title, citation_count, url, date, topic_id, num_authors)
@@ -276,20 +276,14 @@ def insert_works_in(
     execute_values(cur, works_in_query, works_in_rows)
 
 
-def update_db(
-    topics,
-    researchers,
-    papers,
-    works_in,
-):
+def update_db(data):
     conn = return_conn()
     cur = conn.cursor()
-    insert_topics(cur, topics)
-    update_researchers(cur, researchers)
-    insert_papers(cur, papers)
-    insert_works_in(cur, works_in)
+    init_tables_for_ingestion(cur)
+    insert_topics(cur, data["topics"])
+    update_researchers(cur, data["researchers"])
+    insert_papers(cur, data["papers"])
+    insert_works_in(cur, data["works_in"])
     conn.commit()
     cur.close()
     conn.close()
-
-

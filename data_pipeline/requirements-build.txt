@@ -1,0 +1,12 @@
+--extra-index-url https://download.pytorch.org/whl/cu118
+
+datetime
+k-means-constrained
+numpy
+python-dotenv
+psycopg2-binary
+torch
+torchvision
+torchaudio
+transformers
+tqdm

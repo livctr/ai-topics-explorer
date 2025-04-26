@@ -8,11 +8,11 @@ const app = express();
 const port = 3000;
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
+  host: process.env.POSTGRES_HOST,
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+  database: process.env.POSTGRES_DB,
+  port: process.env.POSTGRES_PORT,
 });
 
 // Middleware
@@ -30,9 +30,7 @@ app.get("/", (req, res) => {
  */
 app.get("/topics", async (req, res) => {
   try {
-    const researcherID = req.query.researcher_id
-      ? parseInt(req.query.researcher_id)
-      : null;
+    const researcherID = req.query.researcher_id ? req.query.researcher_id : null;
 
     // Validate researcher_id if provided
     if (researcherID !== null && isNaN(researcherID)) {
@@ -45,7 +43,7 @@ app.get("/topics", async (req, res) => {
     if (researcherID !== null) {
       // Fetch only topics associated with the given researcher
       query = `
-        SELECT DISTINCT t.id, t.name, t.description, t.parent_id, t.level, t.is_leaf
+        SELECT DISTINCT t.id, t.name, t.parent_id, t.level, t.is_leaf
         FROM topic t
         JOIN works_in w ON t.id = w.topic_id
         WHERE w.researcher_id = $1 AND t.is_leaf = true
@@ -132,8 +130,7 @@ app.get("/works_in", async (req, res) => {
 app.get("/researchers", async (req, res) => {
   try {
     const query = `
-      SELECT id, name, link, affiliation, pub_count
-      FROM researcher
+      SELECT * FROM researcher
     `;
     const result = await pool.query(query);
     res.json(result.rows);
@@ -149,19 +146,23 @@ app.get("/papers", async (req, res) => {
     const query = `
         WITH ranked_papers AS (
           SELECT
-            arxiv_id,
+            id,
             title,
-            topic_id,
+            citation_count,
+            url,
             date,
+            topic_id,
             ROW_NUMBER() OVER(PARTITION BY topic_id ORDER BY date DESC) AS rn
           FROM paper
           WHERE topic_id IS NOT NULL
         )
         SELECT
-          arxiv_id,
+          id,
           title,
-          topic_id,
-          date
+          citation_count,
+          url,
+          date,
+          topic_id
         FROM ranked_papers
         WHERE rn <= 200;
     `;

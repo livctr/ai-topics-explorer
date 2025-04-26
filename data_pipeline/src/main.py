@@ -1,17 +1,19 @@
-from data_pipeline.src.search_semantic_scholar import (
-    get_high_relevance_papers,
-    get_author_info
-)
-from data_pipeline.src.get_topics import (
-    get_papers_embeddings,
-    cluster_embeddings_two_level_balanced,
-    get_cluster_topics
-)
-from data_pipeline.src.write_db import build_data, update_db
 import json
+
+from src.write_db import build_data, update_db
 
 
 def generate_data_json():
+    from src.search_semantic_scholar import (
+        get_high_relevance_papers,
+        get_author_info
+    )
+    from src.get_topics import (
+        get_papers_embeddings,
+        cluster_embeddings_two_level_balanced,
+        get_cluster_topics
+    )
+
     papers_dict, authors_dict = get_high_relevance_papers(
         top_per_month=200,
         num_months=12,
@@ -53,14 +55,31 @@ def generate_data_json():
         "papers": papers,
         "works_in": works_in
     }
-    with open("data_pipeline/data.json", "w") as f:
+    with open("./data.json", "w") as f:
         json.dump(data, f)
     return data
 
 
 if __name__ == "__main__":
 
-    data = generate_data_json()
+    from argparse import ArgumentParser
+    parser = ArgumentParser()
+    parser.add_argument(
+        "--get_data",
+        action="store_true",
+        help="Get data from Semantic Scholar and generate data.json"
+    )
+    parser.add_argument(
+        "--update_db",
+        action="store_true",
+        help="Update the database with data.json"
+    )
+    args = parser.parse_args()
 
+    if args.get_data:
+        generate_data_json()
 
-
+    if args.update_db:
+        with open("/app/data/data.json", "r") as f:
+            data = json.load(f)
+        update_db(data)

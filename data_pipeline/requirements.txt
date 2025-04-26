@@ -1,9 +1,4 @@
-beautifulsoup4
 datetime
 python-dotenv
-langchain
-langchain-openai
-kaggle
-openai
 psycopg2-binary
-regex
+tqdm

@@ -12,8 +12,8 @@ const App: React.FC = () => {
     id: -1,
     name: "",
     parent_id: null,
-    is_leaf: false,
     level: -1,
+    is_leaf: false,
   });
   const [fetched, setFetched] = useState<boolean>(false);
   const [topics, setTopics] = useState<Topic[]>([]);
@@ -29,6 +29,7 @@ const App: React.FC = () => {
         axios.get<Topic[]>(`${BACKEND}/topics`),
         axios.get<Paper[]>(`${BACKEND}/papers`),
       ]);
+      console.log("fetched topics and papers");
 
       // Set topics and tree
       setTopics(resTopics.data);

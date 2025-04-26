@@ -1,13 +1,10 @@
-import os
-import requests
 from requests import Session
 from requests.adapters import HTTPAdapter
 from urllib3.util import Retry
 from datetime import date, timedelta
-from typing import Tuple, Dict, Any
+from typing import Dict, Any
 import time
 from tqdm import tqdm
-import json
 import re
 
 import logging

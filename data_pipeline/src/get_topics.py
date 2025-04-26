@@ -1,18 +1,12 @@
 import random
-import json
+from typing import Any, Dict, List, Tuple
+
+from k_means_constrained import KMeansConstrained
+import numpy as np
 import torch
 import torch.nn.functional as F
-from transformers import AutoTokenizer, AutoModel
-from typing import Dict
-
-from typing import Any, Dict, List, Tuple
-import numpy as np
-from k_means_constrained import KMeansConstrained
-
+from transformers import AutoTokenizer, AutoModel, AutoModelForCausalLM
 from tqdm import tqdm
-
-import os
-from transformers import AutoModelForCausalLM, AutoTokenizer
 
 
 def last_token_pool(last_hidden_states: torch.Tensor,

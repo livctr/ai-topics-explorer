@@ -2,16 +2,20 @@ import React, { JSX, useState } from "react";
 import { Topic, TopicNode } from "../types/Topic";
 
 export interface Researcher {
-  id: number;
+  id: string;
   name: string;
-  link: string;
+  homepage: string;
+  url: string;
   affiliation: string;
-  pub_count: number;
+}
+
+interface ScoredResearcher extends Researcher {
+  score: number;
 }
 
 export interface WorksIn {
+  researcher_id: string;
   topic_id: number;
-  researcher_id: number;
   score: number;
 }
 
@@ -21,6 +25,7 @@ interface ResearchersListProps {
   researchers: Researcher[];
   worksIn: WorksIn[];
 }
+
 
 const ResearchersList: React.FC<ResearchersListProps> = ({
   topics,
@@ -43,16 +48,28 @@ const ResearchersList: React.FC<ResearchersListProps> = ({
     .map((id) => researchers.find((researcher) => researcher.id === id))
     .filter((r): r is Researcher => Boolean(r));
 
-  // Sort researchers by publication count (descending)
-  const sortedResearchers = [...filteredResearchers].sort(
-    (a, b) => b.pub_count - a.pub_count
+  // Step 4: Build a map from researcher ID → score for this topic.
+  const scoreMap = new Map<string, number>(
+    matchingWorksInRecords.map(({ researcher_id, score }) => [
+      researcher_id,
+      score,
+    ])
   );
 
-  const [expandedResearchers, setExpandedResearchers] = useState<Set<number>>(
+  // Step 5: Sort by score (descending).
+  const scoredResearchers: ScoredResearcher[] = filteredResearchers.map(r => ({
+    ...r,
+    score: scoreMap.get(r.id) ?? 0
+  }));
+
+  // Step 6: sort by that score
+  const sortedResearchers = scoredResearchers.sort((a, b) => b.score - a.score);
+
+  const [expandedResearchers, setExpandedResearchers] = useState<Set<string>>(
     new Set()
   );
 
-  const toggleExpand = (researcherId: number) => {
+  const toggleExpand = (researcherId: string) => {
     setExpandedResearchers((prev) => {
       const newSet = new Set(prev);
       if (newSet.has(researcherId)) {
@@ -65,7 +82,7 @@ const ResearchersList: React.FC<ResearchersListProps> = ({
   };
 
   // For a given researcher, get all the topics they work in.
-  const getResearcherTopics = (researcherId: number): TopicNode[] => {
+  const getResearcherTopics = (researcherId: string): TopicNode[] => {
     const worksRecords = worksIn.filter(
       (record) => record.researcher_id === researcherId
     );
@@ -112,7 +129,7 @@ const ResearchersList: React.FC<ResearchersListProps> = ({
     <>
     <p><em>The number inside the parentheses is the number of publications found in roughly the past two years.</em></p>
     <ul className="researchers-list list-start">
-      {sortedResearchers.map((researcher) => (
+      {scoredResearchers.map((researcher) => (
         <li
           key={researcher.id}
           style={{
@@ -139,15 +156,15 @@ const ResearchersList: React.FC<ResearchersListProps> = ({
           </span>
           {/* Researcher details */}
           <div>
-            <a href={researcher.link} target="_blank" rel="noopener noreferrer">
+            <a href={researcher.url} target="_blank" rel="noopener noreferrer">
               {researcher.name}
             </a>{" "}
             {researcher.affiliation && researcher.affiliation.trim() !== "" && (
               <> — <em>{researcher.affiliation}</em></>
             )}
             {" "}
-            <span className="pub-count">
-              ({researcher.pub_count})
+            <span className="span score">
+              ({researcher.score})
             </span>
           </div>
           {/* Expanded section spanning both columns */}
