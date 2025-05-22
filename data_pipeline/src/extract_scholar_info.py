@@ -1,17 +1,26 @@
+"""
+This script fetches high-relevance papers and their authors from the Semantic Scholar API.
+"""
+# Standard library imports
+import datetime
+import json
+import logging
 import os
+import re
+import time
+from datetime import date, timedelta
+from typing import Any, Dict, List, Optional, Self, Tuple
+
+# Third-party library imports
 import requests
+from pydantic import BaseModel, model_validator
 from requests import Session
 from requests.adapters import HTTPAdapter
-from urllib3.util import Retry
-from datetime import date, timedelta
-from typing import Tuple, Dict, Any
-import time
 from tqdm import tqdm
-import json
-import re
+from urllib3.util import Retry
 
-import logging
-
+# Local module imports
+from src.data_models import Paper, Researcher, ScholarInfo, write_scholar_info
 
 
 def remove_unmatched(text: str, open_sym: str, close_sym: str) -> str:
@@ -36,6 +45,7 @@ def remove_unmatched(text: str, open_sym: str, close_sym: str) -> str:
     # Build new text without the unmatched symbols.
     new_text = "".join(ch for i, ch in enumerate(text) if i not in indices_to_remove)
     return new_text
+
 
 def textify(text: str) -> str:
     # 1. Replace tabs and newlines with spaces and collapse extra spaces.
@@ -87,7 +97,7 @@ def textify(text: str) -> str:
 class EntryExtractor:
     
     @staticmethod
-    def extract_title(entry_data, max_chars: int = 250):
+    def extract_title(entry_data: Dict[str, Any], max_chars: int = 250) -> str:
         """Extracts the title from the entry data."""
         title = entry_data.get("title")
         if not title:
@@ -101,7 +111,7 @@ class EntryExtractor:
         return title
 
     @staticmethod
-    def extract_abstract(entry_data, max_chars: int = 2000):
+    def extract_abstract(entry_data: Dict[str, Any], max_chars: int = 2000) -> str:
         """Extracts the abstract from the entry data."""
         abstract = entry_data.get("abstract")
         if not abstract:
@@ -119,7 +129,7 @@ def get_high_relevance_papers_by_date(
     date_filter: str,
     fields_of_study: str = "Computer Science",
     top_k: int = 200,
-) -> Dict[str, Any]:
+) -> Tuple[List[Paper], Dict[str, Researcher]]:
 
     http = Session()
     http.mount('https://', HTTPAdapter(max_retries=Retry(
@@ -142,59 +152,49 @@ def get_high_relevance_papers_by_date(
         }
     )
 
-    response.raise_for_status()  # Ensures we stop if there's an error
+    response.raise_for_status()
     data = response.json()
+    papers = data['data']  # Could raise KeyError if 'data' is not present
 
-    if 'data' not in data:
-        return {}
+    parsed_papers: List[Paper] = []
+    unique_researchers: Dict[str, Researcher] = {} # Dictionary to store unique researchers by their ID
 
-    papers = data['data']
+    for paper_data in papers[:top_k]:
+        current_paper_researchers: List[Researcher] = []
+        if 'authors' in paper_data and paper_data['authors'] is not None:
+            for author_data in paper_data['authors']:
+                author_id = author_data.get('authorId')
+                if author_id: # Ensure authorId exists to use as a key
+                    if author_id not in unique_researchers:
+                        # If researcher not seen before, create and store
+                        researcher = Researcher(
+                            id=author_id,
+                            name=author_data.get('name')
+                        )
+                        unique_researchers[author_id] = researcher
+                    # Add the researcher (either newly created or existing) to the current paper's researcher list
+                    current_paper_researchers.append(unique_researchers[author_id])
 
-    papers_dict = {}
-    authors_dict = {}
-
-    for paper in papers[:top_k]:
-
-        if 'paperId' not in paper or paper['paperId'] is None or \
-            'authors' not in paper or paper['authors'] is None or \
-            'publicationDate' not in paper or paper['publicationDate'] is None or \
-            'title' not in paper or paper['title'] is None:
-            continue
-
-        # Populate authors
-        num_authors = 0
-        for author in paper['authors']:
-
-            author_id = author.get('authorId') or None
-            author_name = author.get('name') or None
-            if not author_id or not author_name:
-                continue
-
-            num_authors += 1
-            if author_id not in authors_dict:
-                authors_dict[author_id] = {
-                    'name': author_name,
-                    'papers': [],
-                }
-            authors_dict[author_id]['papers'].append(paper['paperId'])
-
-        papers_dict[paper['paperId']] = {
-            'title': EntryExtractor.extract_title(paper),
-            'abstract': EntryExtractor.extract_abstract(paper),
-            'citationCount': paper.get('citationCount') or 0,
-            'url': paper.get('url') or '',
-            'publicationDate': paper['publicationDate'],
-            'numAuthors': num_authors,
-        }
-
-    return papers_dict, authors_dict
+        # Parse paper
+        parsed_paper = Paper(
+            id=paper_data.get('paperId'),
+            url=paper_data.get('url'),
+            title=paper_data.get('title'),
+            abstract=paper_data.get('abstract'),
+            citation_count=paper_data.get('citationCount', 0),
+            date=paper_data['publicationDate'],
+            researcher_ids=[researcher.id for researcher in current_paper_researchers],
+        )
+        parsed_papers.append(parsed_paper)
+    
+    return parsed_papers, unique_researchers
 
 
 def get_high_relevance_papers(
-    top_per_month: int = 200,
+    top_per_month: int = 100,
     num_months: int = 12,
     fields_of_study: str = "Computer Science"
-) -> Dict[str, Any]:
+) -> Tuple[Dict[str, Paper], Dict[str, Researcher]]:
     """
     Get the top `top_per_month` papers for the past `num_months` in the field of study.
     """
@@ -206,23 +206,14 @@ def get_high_relevance_papers(
         end_date = date.today() - timedelta(days=30 * month)
         date_filter = f"{begin_date.isoformat()}:{end_date.isoformat()}"
 
-        papers_month, authors_month = \
-            get_high_relevance_papers_by_date(date_filter, fields_of_study, top_k=top_per_month)
+        parsed_papers, unique_researchers = get_high_relevance_papers_by_date(
+            date_filter,
+            fields_of_study,
+            top_k=top_per_month
+        )
 
-        papers_dict.update(papers_month)
-        for author_id, author_info in authors_month.items():
-            name = author_info['name']
-            papers = author_info['papers']
-            if author_id in authors_dict:
-                authors_dict[author_id]['papers'].extend(papers)
-            else:
-                authors_dict[author_id] = {
-                    'name': name,
-                    'papers': papers,
-                }
-
-            # Likely not necessary
-            authors_dict[author_id]['papers'] = list(set(authors_dict[author_id]['papers']))
+        papers_dict.update({paper.id: paper for paper in parsed_papers})
+        authors_dict.update(unique_researchers)
 
         # Respect rate limit
         time.sleep(15)
@@ -230,13 +221,11 @@ def get_high_relevance_papers(
     return papers_dict, authors_dict
 
 
-def get_author_info(authors_dict: Dict[str, Any], min_paper_cnt: int = 2) -> Dict[str, Any]:
+def fill_author_info(authors_dict: Dict[str, Researcher]) -> None:
     """
-    Get the author information for each author in the authors_dict.
+    Modifies the authors_dict in place with additional information from the Semantic Scholar API.
     """
-    authors_dict_filtered = {k: v for k, v in authors_dict.items() if len(v['papers']) >= min_paper_cnt}
-
-    author_ids = list(authors_dict_filtered.keys())
+    author_ids = list(authors_dict.keys())
     batch_limit = 500
 
     for i in tqdm(range(0, len(author_ids), batch_limit), desc="Fetching author info..."):
@@ -259,22 +248,46 @@ def get_author_info(authors_dict: Dict[str, Any], min_paper_cnt: int = 2) -> Dic
         )
 
         response.raise_for_status()
-        data = response.json()
-        for entry in data:
-            author_id = entry.get('authorId') or None
-            author_name = entry.get('name') or None
-            if not author_id or not author_name:
-                continue
-
-            authors_dict_filtered[author_id]['url'] = entry.get('url') or ''
-            if author_name != authors_dict_filtered[author_id]['name']:
-                logging.debug(f"Name mismatch for author {author_id}: {authors_dict_filtered[author_id]['name']} vs {author_name}")
-            authors_dict_filtered[author_id]['name'] = author_name
-            authors_dict_filtered[author_id]['affiliations'] = entry.get('affiliations') or []
-            authors_dict_filtered[author_id]['homepage'] = entry.get('homepage') or ''
-            authors_dict_filtered[author_id]['hIndex'] = entry.get('hIndex') or 0
+        authors = response.json()
+        # Update researchers
+        for researcher_data in authors:
+            author_id = researcher_data.get('authorId')
+            if author_id in authors_dict:
+                researcher = authors_dict[author_id]
+                researcher.url = researcher_data.get('url')
+                researcher.affiliations = researcher_data.get('affiliations', [])
+                researcher.homepage = researcher_data.get('homepage')
+                researcher.h_index = researcher_data.get('hIndex')
 
         # Respect rate limit
         time.sleep(15)
 
-    return authors_dict_filtered
+
+def ingest_scholar_info(
+    top_per_month: int = 100,
+    num_months: int = 12,
+    fields_of_study: str = "Computer Science",
+) -> Tuple[List[Paper], List[Researcher]]:
+    
+    date = datetime.date.today().isoformat()
+
+    papers_dict, authors_dict = get_high_relevance_papers(
+        top_per_month=top_per_month,
+        num_months=num_months,
+        fields_of_study=fields_of_study
+    )
+
+    fill_author_info(authors_dict)
+
+    # Convert dictionaries to lists
+    papers_list = list(papers_dict.values())
+    researchers_list = list(authors_dict.values())
+
+    scholar_info = ScholarInfo(
+        date=date,
+        papers=papers_list,
+        researchers=researchers_list
+    )
+    write_scholar_info(scholar_info)
+
+    return scholar_info
