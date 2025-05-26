@@ -1,22 +1,33 @@
+"""
+This module implements an agentic classification workflow for research papers,
+extracting their main topics, AI-related status, and subtopics using a state graph approach.
+"""
+
+# Standard library imports
 import os
 import json
-from typing import List, Optional, Dict, TypedDict, Annotated, Sequence, Set, Tuple
-from pydantic import BaseModel, Field, model_validator
-from typing_extensions import Self # For Pydantic model_validator
+from collections import defaultdict
 from datetime import date
+from functools import partial
+from typing import List, Optional, Dict, TypedDict, Annotated, Sequence, Set, Tuple
+
+# Third-party imports
+from dotenv import load_dotenv
+from pydantic import BaseModel, Field, model_validator
+from typing_extensions import Self  # For Pydantic model_validator
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 
-from functools import partial
-from src.data_models import Paper, Topic, WorksIn, ScholarInfo, write_scholar_info, load_scholar_info_from_file
+# Local imports
+from data_pipeline.src.data_models import Paper, Topic, WorksIn, ScholarInfo, write_scholar_info, load_scholar_info_from_file
 
-from dotenv import load_dotenv
+# Configuration
 load_dotenv()
 
+# Logging setup
 import logging
-
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # ======================
@@ -59,7 +70,7 @@ class PaperClassificationState(TypedDict):
 # ======================
 # Helper functions
 # ======================
-def load_main_topics(filepath: str = "./assets/cold_start.txt") -> List[Dict[str, str]]:
+def load_main_topics(filepath: str = "./data_pipeline/assets/cold_start.txt") -> List[Dict[str, str]]:
     topics = []
     with open(filepath, 'r') as f:
         content = f.read().strip()
@@ -258,6 +269,8 @@ def build_works_in(
     scholar_info: ScholarInfo,
 ) -> None:
     researchers = {r.id for r in scholar_info.researchers}
+    topics = {t.id: t for t in scholar_info.topics}
+    works_in = defaultdict(float)
 
     scholar_info.works_in = []  # Clear past works_in data
 
@@ -271,13 +284,22 @@ def build_works_in(
                 logging.warning(f"Researcher ID '{r}' for paper ID '{paper.id}' not found in researchers. Skipping works_in assignment.")
             else:
                 score = 1.0 / len(paper.researcher_ids)
-                scholar_info.works_in.append(
-                    WorksIn(
-                        researcher_id=r,
-                        topic_id=paper.topic_id,
-                        score=score
-                    )
+
+                topic_id = paper.topic_id
+                while topic_id is not None:
+                    works_in[(r, topic_id)] += score
+                    topic_id = topics[topic_id].parent_id if topic_id in topics else None
+
+    for (r, topic_id), score in works_in.items():
+        if r in researchers and topic_id in topics:
+            scholar_info.works_in.append(
+                WorksIn(
+                    researcher_id=r,
+                    topic_id=topic_id,
+                    score=score
                 )
+            )
+                
 
 
 # ======================
@@ -534,7 +556,7 @@ def build_workflow() -> StateGraph:
     return workflow
 
 
-def run_agentic_classification(scholar_info: ScholarInfo, rebuild_topics_if_exists: bool = True) -> List[Dict]:
+def run_agentic_classification(scholar_info: ScholarInfo, rebuild_topics_if_exists: bool = True) -> ScholarInfo:
     """
     Runs the agentic classification workflow on a list of papers.
     """

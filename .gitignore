@@ -2,6 +2,7 @@
 
 data/
 nbs/
+output/
 
 # Below are copied from gitignore files on GitHub
 

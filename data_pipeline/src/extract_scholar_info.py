@@ -3,24 +3,19 @@ This script fetches high-relevance papers and their authors from the Semantic Sc
 """
 # Standard library imports
 import datetime
-import json
-import logging
-import os
 import re
 import time
 from datetime import date, timedelta
-from typing import Any, Dict, List, Optional, Self, Tuple
+from typing import Any, Dict, List, Tuple
 
 # Third-party library imports
-import requests
-from pydantic import BaseModel, model_validator
 from requests import Session
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 from urllib3.util import Retry
 
 # Local module imports
-from src.data_models import Paper, Researcher, ScholarInfo, write_scholar_info
+from data_pipeline.src.data_models import Paper, Researcher, ScholarInfo, write_scholar_info
 
 
 def remove_unmatched(text: str, open_sym: str, close_sym: str) -> str:
