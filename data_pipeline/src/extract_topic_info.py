@@ -4,31 +4,27 @@ extracting their main topics, AI-related status, and subtopics using a state gra
 """
 
 # Standard library imports
+import logging
 import os
-import json
 from collections import defaultdict
-from datetime import date
 from functools import partial
-from typing import List, Optional, Dict, TypedDict, Annotated, Sequence, Set, Tuple
+from typing import List, Optional, Dict, TypedDict, Sequence, Set, Tuple
 
 # Third-party imports
 from dotenv import load_dotenv
-from pydantic import BaseModel, Field, model_validator
-from typing_extensions import Self  # For Pydantic model_validator
+from pydantic import BaseModel, Field
 from langgraph.graph import StateGraph, END
 from langchain_openai import ChatOpenAI
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 from langchain_core.output_parsers import PydanticOutputParser
 
 # Local imports
-from data_pipeline.src.data_models import Paper, Topic, WorksIn, ScholarInfo, write_scholar_info, load_scholar_info_from_file
+from src.data_models import Paper, Topic, WorksIn, ScholarInfo, write_scholar_info
 
 # Configuration
 load_dotenv()
-
-# Logging setup
-import logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
 
 # ======================
 # Data models in agentic classification
@@ -70,7 +66,7 @@ class PaperClassificationState(TypedDict):
 # ======================
 # Helper functions
 # ======================
-def load_main_topics(filepath: str = "./data_pipeline/assets/cold_start.txt") -> List[Dict[str, str]]:
+def load_main_topics(filepath: str = "assets/cold_start.txt") -> List[Dict[str, str]]:
     topics = []
     with open(filepath, 'r') as f:
         content = f.read().strip()
@@ -179,11 +175,12 @@ def build_topics_from_state(scholar_info: ScholarInfo, clean_final_state: PaperC
 
     # Extract topics from classified_papers
     for classified_paper_dict in clean_final_state.get("classified_papers", []):
+        is_ai_related = classified_paper_dict.get("is_ai_related", False)
         main_name_cp = classified_paper_dict.get("main_topic")
         sub_name_cp = classified_paper_dict.get("sub_topic")
 
         # Allow "Unclassified" as a valid main topic from classified papers
-        if _is_valid_topic_name(main_name_cp) or main_name_cp == "Unclassified":
+        if is_ai_related and (_is_valid_topic_name(main_name_cp) or main_name_cp == "Unclassified"):
             all_main_topic_names.add(main_name_cp)
             # If there's a valid sub_topic, it forms a pair with its main_topic
             if _is_valid_topic_name(sub_name_cp) and (_is_valid_topic_name(main_name_cp) or main_name_cp == "Unclassified"):
@@ -232,19 +229,24 @@ def build_topics_from_state(scholar_info: ScholarInfo, clean_final_state: PaperC
             else:
                 logging.warning(f"Parent main topic '{main_topic_name}' not found in processed_main_topics for subtopic '{sub_topic_name}'. Skipping subtopic.")
 
-    # --- Step 4: Update topic_id in scholar_info.papers ---
+    # --- Step 4: Update scholar_info.papers (both topic_id and if in list) ---
     papers_in_scholar_info_map: Dict[str, Paper] = {p.id: p for p in scholar_info.papers}
+    scholar_info.papers = []  # Clear existing papers, only include AI related ones
 
     for classified_paper_dict in clean_final_state.get("classified_papers", []):
         paper_id_str = classified_paper_dict.get("id")
         main_name_cp = classified_paper_dict.get("main_topic")
+        is_ai_related = classified_paper_dict.get("is_ai_related", False)
         sub_name_cp = classified_paper_dict.get("sub_topic")
 
         paper_to_update = papers_in_scholar_info_map.get(paper_id_str)
         if not paper_to_update:
-            logging.warning(f"Paper ID '{paper_id_str}' from classified_papers not found in scholar_info.papers. Cannot update its topic_id.")
+            logging.warning(f"Paper ID '{paper_id_str}' from classified_papers not found. Cannot update its topic_id.")
             continue
-
+    
+        if not is_ai_related:
+            logging.info(f"Paper ID '{paper_id_str}' is not AI-related. Skipping insert.")
+        
         assigned_topic_id: Optional[int] = None
 
         # Check if main_name_cp itself is valid or "Unclassified" before looking up pairs
@@ -260,6 +262,7 @@ def build_topics_from_state(scholar_info: ScholarInfo, clean_final_state: PaperC
         
         if assigned_topic_id is not None:
             paper_to_update.topic_id = assigned_topic_id
+            scholar_info.papers.append(paper_to_update)
         else:
             if main_topic_is_usable or _is_valid_topic_name(sub_name_cp): # Log if there were topic names but they didn't map to an ID.
                  logging.warning(f"No processed topic ID found for paper '{paper_id_str}' (Main: '{main_name_cp}', Sub: '{sub_name_cp}'). Its topic_id will remain None.")

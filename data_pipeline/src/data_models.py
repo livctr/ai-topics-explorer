@@ -122,8 +122,8 @@ def merge_link_info_into_scholar_info(scholar_info: ScholarInfo, links: List[Res
     return scholar_info
 
 
-LINKS_PATH = "data_pipeline/output/researcher_links.json"
-INFO_PATH = "data_pipeline/output/scholar_info.json"
+LINKS_PATH = "output/researcher_links.json"
+INFO_PATH = "output/scholar_info.json"
 
 def write_researcher_links(links: List[ResearcherLink], output_path: str = LINKS_PATH) -> None:
     with open(output_path, 'w') as f:

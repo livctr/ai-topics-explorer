@@ -1,18 +1,18 @@
 import psycopg2
 import os
 from dotenv import load_dotenv
-from data_pipeline.src.data_models import ScholarInfo
+from src.data_models import ScholarInfo
 
 load_dotenv()
 
 
 def return_conn():
     conn = psycopg2.connect(
-        dbname=os.getenv("DB_NAME"),
-        user=os.getenv("DB_USER"),
-        password=os.getenv("DB_PASSWORD"),
-        host=os.getenv("DB_HOST"),
-        port=os.getenv("DB_PORT")
+        dbname=os.getenv("POSTGRES_DB"),
+        user=os.getenv("POSTGRES_USER"),
+        password=os.getenv("POSTGRES_PASSWORD"),
+        host=os.getenv("POSTGRES_HOST"),
+        port=os.getenv("POSTGRES_PORT")
     )
     return conn
 
@@ -31,11 +31,11 @@ def init_tables_for_ingestion(cur: psycopg2.extensions.cursor):
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS researcher (
-            id SERIAL PRIMARY KEY,
+            id BIGINT PRIMARY KEY,
             name TEXT NOT NULL,
             homepage TEXT,
             url TEXT,
-            affiliation TEXT,  -- primary affiliation
+            affiliation TEXT
         );
     """)
 
@@ -57,7 +57,7 @@ def init_tables_for_ingestion(cur: psycopg2.extensions.cursor):
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS works_in (
-            researcher_id INT REFERENCES researcher(id) ON DELETE CASCADE,
+            researcher_id BIGINT REFERENCES researcher(id) ON DELETE CASCADE,
             topic_id INT REFERENCES topic(id) ON DELETE CASCADE,
             score FLOAT CHECK (score >= 0),
             PRIMARY KEY (researcher_id, topic_id)
@@ -76,11 +76,12 @@ def ingest_scholar_info(cur: psycopg2.extensions.cursor, scholar_info: ScholarIn
 
     # Insert researchers
     for researcher in scholar_info.researchers:
-        cur.execute("""
-            INSERT INTO researcher (id, name, homepage, url, affiliation)
-            VALUES (%s, %s, %s, %s, %s)
-            ON CONFLICT (name) DO NOTHING;
-        """, (researcher.id, researcher.name, researcher.homepage, researcher.url, researcher.affiliations[0] if researcher.affiliations else None))
+        if researcher.h_index > 1:
+            cur.execute("""
+                INSERT INTO researcher (id, name, homepage, url, affiliation)
+                VALUES (%s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO NOTHING;
+            """, (researcher.id, researcher.name, researcher.homepage, researcher.url, researcher.affiliations[0] if researcher.affiliations else None))
 
     # Insert papers
     for paper in scholar_info.papers:
@@ -115,3 +116,9 @@ def update_db(
     conn.commit()
     cur.close()
     conn.close()
+
+
+if __name__ == "__main__":
+    from src.data_models import load_scholar_info_from_file
+    scholar_info = load_scholar_info_from_file()
+    update_db(scholar_info)

@@ -9,13 +9,13 @@ from langchain_openai import ChatOpenAI
 from langchain_core.output_parsers import PydanticOutputParser
 from langchain_core.prompts import ChatPromptTemplate, SystemMessagePromptTemplate, HumanMessagePromptTemplate
 
-from data_pipeline.src.data_models import (
-    ResearcherLink, Researcher, ScholarInfo, ResearcherLink,
-    load_scholar_info_from_file, write_researcher_links
-)
-
 # Tavily client
 from tavily import TavilyClient
+
+from src.data_models import (
+    ResearcherLink, Researcher, ScholarInfo
+)
+
 
 class ExtractedInfo(BaseModel):
     """Pydantic model for parsing LLM output for researcher details."""
@@ -87,7 +87,7 @@ def run_researcher_info_extraction(
         max_tokens=100, # Max tokens for the completion (response from LLM)
         openai_api_key=openai_api_key
     )
-    
+
     tavily_api_key = os.getenv("TAVILY_API_KEY")
     if not tavily_api_key:
         logger.critical("TAVILY_API_KEY not found in environment variables. Search functionality will fail.")
@@ -95,10 +95,10 @@ def run_researcher_info_extraction(
     tavily_client = TavilyClient(api_key=tavily_api_key)
 
     output_rll = [link.model_copy(deep=True) for link in rll]
-    processed_researcher_ids = {link.researcher_id for link in output_rll}
+    processed_researcher_ids = {link.id for link in output_rll}
     
     researcher_map: Dict[int, Researcher] = {
-        r.id: r for r in scholar_info.researchers if r.id is not None
+        r.id: r for r in scholar_info.researchers if r.id is not None and r.h_index > 1
     }
     
     level1_topics = [t for t in scholar_info.topics if t.level == 1]

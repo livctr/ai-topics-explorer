@@ -15,7 +15,7 @@ from tqdm import tqdm
 from urllib3.util import Retry
 
 # Local module imports
-from data_pipeline.src.data_models import Paper, Researcher, ScholarInfo, write_scholar_info
+from src.data_models import Paper, Researcher, ScholarInfo, write_scholar_info
 
 
 def remove_unmatched(text: str, open_sym: str, close_sym: str) -> str:
@@ -128,7 +128,7 @@ def get_high_relevance_papers_by_date(
 
     http = Session()
     http.mount('https://', HTTPAdapter(max_retries=Retry(
-        total=5,
+        total=10,
         backoff_factor=2,
         status_forcelist=[429, 500, 502, 503, 504],
         allowed_methods={"HEAD", "GET", "OPTIONS"}
@@ -221,14 +221,14 @@ def fill_author_info(authors_dict: Dict[str, Researcher]) -> None:
     Modifies the authors_dict in place with additional information from the Semantic Scholar API.
     """
     author_ids = list(authors_dict.keys())
-    batch_limit = 500
+    batch_limit = 1000
 
     for i in tqdm(range(0, len(author_ids), batch_limit), desc="Fetching author info..."):
         batch_ids = author_ids[i:i + batch_limit]
 
         http = Session()
         http.mount('https://', HTTPAdapter(max_retries=Retry(
-            total=5,
+            total=10,
             backoff_factor=2,
             status_forcelist=[429, 500, 502, 503, 504],
             allowed_methods={"HEAD", "GET", "POST", "OPTIONS"}
@@ -246,6 +246,8 @@ def fill_author_info(authors_dict: Dict[str, Researcher]) -> None:
         authors = response.json()
         # Update researchers
         for researcher_data in authors:
+            if researcher_data is None or 'authorId' not in researcher_data:
+                continue
             author_id = researcher_data.get('authorId')
             if author_id in authors_dict:
                 researcher = authors_dict[author_id]

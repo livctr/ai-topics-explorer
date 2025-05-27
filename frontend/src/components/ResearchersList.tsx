@@ -1,10 +1,11 @@
 import React, { JSX, useState } from "react";
-import { Topic, TopicNode } from "../types/Topic";
+import { Topic, TopicNode } from "../types/Topic"; // Assuming TopicNode includes a 'children' property
 
 export interface Researcher {
   id: number;
   name: string;
-  link: string;
+  url: string;
+  homepage: string;
   affiliation: string;
   pub_count: number;
 }
@@ -16,10 +17,14 @@ export interface WorksIn {
 }
 
 interface ResearchersListProps {
-  topics: Topic[];
+  topics: Topic[]; // Expected to be all topics, used for getResearcherTopics
   selectedTopic: Topic;
-  researchers: Researcher[];
-  worksIn: WorksIn[];
+  researchers: Researcher[]; // Expected to be all researchers
+  worksIn: WorksIn[]; // Expected to be all works_in records
+}
+
+interface DisplayResearcher extends Researcher {
+  scoreInSelectedTopic: number;
 }
 
 const ResearchersList: React.FC<ResearchersListProps> = ({
@@ -33,19 +38,26 @@ const ResearchersList: React.FC<ResearchersListProps> = ({
     (record) => record.topic_id === selectedTopic.id
   );
 
-  // Step 2: Extract unique researcher IDs from these records.
-  const uniqueResearcherIds = Array.from(
-    new Set(matchingWorksInRecords.map((record) => record.researcher_id))
-  );
+  // Step 2: Create a list of researchers with their scores for the selected topic.
+  // This list will contain objects of type DisplayResearcher.
+  const researchersWithScoresForTopic: DisplayResearcher[] = matchingWorksInRecords
+    .map((workRecord) => {
+      const researcher = researchers.find(
+        (r) => r.id === workRecord.researcher_id
+      );
+      if (researcher) {
+        return {
+          ...researcher, // Spread all properties from Researcher
+          scoreInSelectedTopic: workRecord.score, // Add the score for the current topic
+        };
+      }
+      return null; // In case a researcher isn't found, though this should be rare if data is consistent
+    })
+    .filter((r): r is DisplayResearcher => Boolean(r)); // Type guard to filter out nulls
 
-  // Step 3: "Join" with the researchers array to get full details.
-  const filteredResearchers = uniqueResearcherIds
-    .map((id) => researchers.find((researcher) => researcher.id === id))
-    .filter((r): r is Researcher => Boolean(r));
-
-  // Sort researchers by publication count (descending)
-  const sortedResearchers = [...filteredResearchers].sort(
-    (a, b) => b.pub_count - a.pub_count
+  // Step 3: Sort these researchers by their score in the selected topic (descending).
+  const sortedDisplayResearchers = [...researchersWithScoresForTopic].sort(
+    (a, b) => b.scoreInSelectedTopic - a.scoreInSelectedTopic
   );
 
   const [expandedResearchers, setExpandedResearchers] = useState<Set<number>>(
@@ -64,28 +76,27 @@ const ResearchersList: React.FC<ResearchersListProps> = ({
     });
   };
 
-  // For a given researcher, get all the topics they work in.
   const getResearcherTopics = (researcherId: number): TopicNode[] => {
-    const worksRecords = worksIn.filter(
+    const researcherWorksInRecords = worksIn.filter(
       (record) => record.researcher_id === researcherId
     );
-    const topicIds = Array.from(new Set(worksRecords.map((record) => record.topic_id)));
+    const topicIds = Array.from(
+      new Set(researcherWorksInRecords.map((record) => record.topic_id))
+    );
+    // Assuming `topics` prop contains Topic objects that can be cast to TopicNode
+    // and that TopicNode might have a 'children' property used in the filter below.
     return topics
-            .filter((topic) => topicIds.includes(topic.id))
-            .map((topic) => topic as TopicNode);
+      .filter((topic) => topicIds.includes(topic.id))
+      .map((topic) => topic as TopicNode);
   };
 
-  // Helper function to render the chain from root to this topic.
-  // It uses the parent_id field (root topics have parent_id === null)
-  // and renders the chain as "Root > ... > Topic".
-  // Only the final topic is bold if its id matches selectedTopicID.
   const renderTopicChain = (topic: Topic): JSX.Element => {
     const chain: Topic[] = [];
     let current: Topic | undefined = topic;
     while (current) {
-      // Add current topic to the beginning of the chain
       chain.unshift(current);
       if (current.parent_id === null) break;
+      // Find parent in the main topics list
       current = topics.find((t) => t.id === current!.parent_id);
     }
     return (
@@ -104,67 +115,88 @@ const ResearchersList: React.FC<ResearchersListProps> = ({
     );
   };
 
-  if (sortedResearchers.length === 0) {
+  if (sortedDisplayResearchers.length === 0) {
     return <p>No researchers found for {selectedTopic.name}.</p>;
   }
 
   return (
     <>
-    <p><em>The number inside the parentheses is the number of publications found in roughly the past two years.</em></p>
-    <ul className="researchers-list list-start">
-      {sortedResearchers.map((researcher) => (
-        <li
-          key={researcher.id}
-          style={{
-            display: "grid",
-            gridTemplateColumns: "auto 1fr",
-            alignItems: "start",
-          }}
-        >
-          {/* Triangle toggle */}
-          <span
-            className="topic-toggle"
-            onClick={() => toggleExpand(researcher.id)}
-            style={{ cursor: "pointer" }}
+      <p>
+        <em>
+          The number inside the parentheses is the researcher's score for this
+          topic (higher means a better match).
+        </em>
+      </p>
+      <ul className="researchers-list list-start">
+        {sortedDisplayResearchers.map((displayResearcher) => (
+          <li
+            key={displayResearcher.id}
+            style={{
+              display: "grid",
+              gridTemplateColumns: "auto 1fr",
+              alignItems: "start",
+            }}
           >
             <span
-              className={
-                expandedResearchers.has(researcher.id)
-                  ? "arrow expanded"
-                  : "arrow collapsed"
-              }
+              className="topic-toggle"
+              onClick={() => toggleExpand(displayResearcher.id)}
+              style={{ cursor: "pointer" }}
             >
-              ▸
+              <span
+                className={
+                  expandedResearchers.has(displayResearcher.id)
+                    ? "arrow expanded"
+                    : "arrow collapsed"
+                }
+              >
+                ▸
+              </span>
             </span>
-          </span>
-          {/* Researcher details */}
-          <div>
-            <a href={researcher.link} target="_blank" rel="noopener noreferrer">
-              {researcher.name}
-            </a>{" "}
-            {researcher.affiliation && researcher.affiliation.trim() !== "" && (
-              <> — <em>{researcher.affiliation}</em></>
-            )}
-            {" "}
-            <span className="pub-count">
-              ({researcher.pub_count})
-            </span>
-          </div>
-          {/* Expanded section spanning both columns */}
-          {expandedResearchers.has(researcher.id) && (
-            <div style={{ gridColumn: "1 / -1", marginTop: "8px" }}>
-              <ul>
-                {getResearcherTopics(researcher.id)
-                  .filter((topic) => !topic.children || topic.children.length === 0)
-                  .map((topic) => (
-                    <li key={topic.id}>{renderTopicChain(topic)}</li>
-                  ))}
-              </ul>
+            <div>
+              <a
+                href={
+                  displayResearcher.homepage
+                    ? (displayResearcher.homepage.startsWith('http://') || displayResearcher.homepage.startsWith('https://')
+                      ? displayResearcher.homepage
+                      : `https://${displayResearcher.homepage}`)
+                    : (displayResearcher.url.startsWith('http://') || displayResearcher.url.startsWith('https://')
+                      ? displayResearcher.url
+                      : `https://${displayResearcher.url}`)
+                }
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                {displayResearcher.name}
+              </a>{" "}
+              {displayResearcher.affiliation &&
+                displayResearcher.affiliation.trim() !== "" && (
+                  <>
+                    — <em>{displayResearcher.affiliation}</em>
+                  </>
+                )}
+              {" "}
+              <span className="researcher-score">
+                ({displayResearcher.scoreInSelectedTopic.toFixed(2)})
+              </span>
             </div>
-          )}
-        </li>
-      ))}
-    </ul>
+            {expandedResearchers.has(displayResearcher.id) && (
+              <div style={{ gridColumn: "1 / -1", marginTop: "8px" }}>
+                <ul>
+                  {getResearcherTopics(displayResearcher.id)
+                    // This filter assumes TopicNode has a 'children' property.
+                    // If it's meant to only show leaf topics from the researcher's associations:
+                    .filter(
+                      (topicNode) => topicNode.is_leaf || (topicNode.children && topicNode.children.length === 0)
+                    )
+                    .map((topic) => (
+                      <li key={topic.id}>{renderTopicChain(topic)}</li>
+                    ))}
+                </ul>
+              </div>
+            )}
+          </li>
+        ))}
+      </ul>
     </>
   );
 };

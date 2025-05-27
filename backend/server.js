@@ -8,11 +8,11 @@ const app = express();
 const port = 3000;
 
 const pool = new Pool({
-  host: process.env.DB_HOST,
-  user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
-  port: process.env.DB_PORT,
+  host: process.env.POSTGRES_HOST,
+  user: process.env.POSTGRES_USER,
+  password: process.env.POSTGRES_PASSWORD,
+  database: process.env.POSTGRES_DB,
+  port: process.env.POSTGRES_PORT,
 });
 
 // Middleware
@@ -24,9 +24,10 @@ app.get("/", (req, res) => {
 });
 
 /**
- * GET
+ * GET /topics
  * Returns all topics. Can specify a given researcher with
- * `/topics?researcher_id=ID`.
+ * `/topics?researcher_id=ID` to get topics associated with that researcher.
+ * When no researcher_id is provided, topics are returned in a hierarchical structure.
  */
 app.get("/topics", async (req, res) => {
   try {
@@ -43,9 +44,8 @@ app.get("/topics", async (req, res) => {
     let params = [];
 
     if (researcherID !== null) {
-      // Fetch only topics associated with the given researcher
       query = `
-        SELECT DISTINCT t.id, t.name, t.description, t.parent_id, t.level, t.is_leaf
+        SELECT DISTINCT t.id, t.name, t.parent_id, t.level, t.is_leaf
         FROM topic t
         JOIN works_in w ON t.id = w.topic_id
         WHERE w.researcher_id = $1 AND t.is_leaf = true
@@ -53,8 +53,7 @@ app.get("/topics", async (req, res) => {
       `;
       params.push(researcherID);
     } else {
-      // Fetch all topics
-      query = "SELECT * FROM topic ORDER BY id;";
+      query = "SELECT id, name, parent_id, level, is_leaf FROM topic ORDER BY id;";
     }
 
     const result = await pool.query(query, params);
@@ -100,9 +99,9 @@ function orderTopicsHierarchically(topics) {
 
   // Perform DFS traversal to get ordered topics
   const orderedTopics = [];
-  function dfs(topic, depth = 1) {
+  function dfs(topic) { // depth parameter was unused in its recursive call logic
     orderedTopics.push(topic);
-    topic.children.forEach((child) => dfs(child, depth + 1));
+    topic.children.forEach((child) => dfs(child)); // Removed depth
   }
 
   rootTopics.forEach((root) => dfs(root));
@@ -113,29 +112,16 @@ function orderTopicsHierarchically(topics) {
 /**
  * GET /researchers?topic_id=ID
  * Returns a list of researchers working in the given topic, limited to 50.
+ * The topic_id query parameter is required.
  */
-app.get("/works_in", async (req, res) => {
-  try {
-    const query = `
-      SELECT topic_id, researcher_id, score
-      FROM works_in
-      ORDER BY topic_id, researcher_id;
-    `;
-    const result = await pool.query(query);
-    res.json(result.rows);
-  } catch (error) {
-    console.error("Error fetching works_in connections:", error);
-    res.status(500).json({ error: "Internal Server Error" });
-  }
-});
-
 app.get("/researchers", async (req, res) => {
   try {
-    const query = `
-      SELECT id, name, link, affiliation, pub_count
-      FROM researcher
+    const queryText = `
+      SELECT r.id, r.name, r.homepage, r.url, r.affiliation
+      FROM researcher r
     `;
-    const result = await pool.query(query);
+
+    const result = await pool.query(queryText);
     res.json(result.rows);
   } catch (error) {
     console.error("Error fetching researchers:", error);
@@ -143,29 +129,54 @@ app.get("/researchers", async (req, res) => {
   }
 });
 
+
+/**
+ * GET /works_in
+ * Returns all connections between researchers and topics from the works_in table.
+ */
+app.get("/works_in", async (req, res) => {
+  try {
+    const queryText = `
+      SELECT researcher_id, topic_id, score
+      FROM works_in
+      ORDER BY topic_id, researcher_id;
+    `;
+    const result = await pool.query(queryText);
+    res.json(result.rows);
+  } catch (error) {
+    console.error("Error fetching works_in connections:", error);
+    res.status(500).json({ error: "Internal Server Error" });
+  }
+});
+
+
 app.get("/papers", async (req, res) => {
   try {
-    // top 200 papers for each topic
-    const query = `
-        WITH ranked_papers AS (
-          SELECT
-            arxiv_id,
-            title,
-            topic_id,
-            date,
-            ROW_NUMBER() OVER(PARTITION BY topic_id ORDER BY date DESC) AS rn
-          FROM paper
-          WHERE topic_id IS NOT NULL
-        )
+    // top 200 papers for each topic by date
+    const queryText = `
+      WITH ranked_papers AS (
         SELECT
-          arxiv_id,
-          title,
-          topic_id,
-          date
-        FROM ranked_papers
-        WHERE rn <= 200;
+          p.id,
+          p.title,
+          p.topic_id,
+          p.date,
+          p.url,
+          p.citation_count,
+          ROW_NUMBER() OVER(PARTITION BY p.topic_id ORDER BY p.date DESC, p.citation_count DESC NULLS LAST) AS rn
+        FROM paper p
+        WHERE p.topic_id IS NOT NULL
+      )
+      SELECT
+        id,
+        title,
+        topic_id,
+        date,
+        url,
+        citation_count
+      FROM ranked_papers
+      WHERE rn <= 200;
     `;
-    const result = await pool.query(query);
+    const result = await pool.query(queryText);
     res.json(result.rows);
   } catch (error) {
     console.error("Error fetching papers:", error);

@@ -1,9 +1,7 @@
-beautifulsoup4
 datetime
-python-dotenv
-langchain
-langchain-openai
-kaggle
-openai
-psycopg2-binary
-regex
+python-dotenv==1.1.0
+psycopg2_binary==2.9.10
+pydantic==2.11.5
+Requests==2.32.3
+typing_extensions==4.13.2
+urllib3==2.4.0

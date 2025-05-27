@@ -2,10 +2,10 @@ from argparse import ArgumentParser
 
 from datetime import date
 
-from data_pipeline.src.extract_scholar_info import ingest_scholar_info
-from data_pipeline.src.extract_topic_info import run_agentic_classification
-from data_pipeline.src.extract_researcher_links import run_researcher_info_extraction
-from data_pipeline.src.data_models import (
+from src.extract_scholar_info import ingest_scholar_info
+from src.extract_topic_info import run_agentic_classification
+from src.extract_researcher_links import run_researcher_info_extraction
+from src.data_models import (
     load_scholar_info_from_file, write_scholar_info,
     load_researcher_links_from_file, write_researcher_links
 )
@@ -26,13 +26,13 @@ if __name__ == "__main__":
     parser.add_argument(
         "--num_months",
         type=int,
-        default=1,
+        default=12,
         help="Number of months to consider for ingestion."
     )
     parser.add_argument(
         "--max_researcher_updates",
         type=int,
-        default=1,
+        default=20,
         help="Maximum number of researcher links to update."
     )
     args = parser.parse_args()

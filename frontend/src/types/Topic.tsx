@@ -2,8 +2,8 @@ type Topic = {
   id: number;
   name: string;
   parent_id: number | null;
-  is_leaf: boolean;
   level: number;
+  is_leaf: boolean;
 };
 
 type TopicNode = Topic & {

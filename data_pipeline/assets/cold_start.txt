@@ -14,7 +14,7 @@ Topic: Deep Learning
 Description: focuses on network architectures, optimization for deep networks, foundation models
 Examples: parameter-efficient fine-tuning, LLMs
 
-Topic: Generative AI
+Topic: Generative AI / Diffusion
 Description: focuses on AI that can create new content, such as images, videos, and code
 Examples: diffusion, generation, variational inference
 

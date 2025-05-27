@@ -2,10 +2,12 @@ import React from "react";
 import { Topic } from "../types/Topic";
 
 export interface Paper {
-  arxiv_id: string;
+  id: string;
   title: string;
+  citation_count: number;
+  url: string;
+  date: string;
   topic_id: number;
-  date: Date;
 }
 
 interface PapersListProps {
@@ -36,7 +38,7 @@ const PapersList: React.FC<PapersListProps> = ({
     <ul className="papers-list list-start">
       {filteredPapers.map((paper) => (
         <li
-          key={paper.arxiv_id}
+          key={paper.id}
           style={{
             display: "grid",
             gridTemplateColumns: "auto 1fr",
@@ -47,11 +49,11 @@ const PapersList: React.FC<PapersListProps> = ({
             <span className="arrow expanded">▸</span>
           </span>
           <a
-            href={`https://arxiv.org/abs/${paper.arxiv_id}`}
+            href={`${paper.url}`}
             target="_blank"
             rel="noopener noreferrer"
           >
-            {paper.title} ({paper.date.toLocaleDateString()})
+            {paper.title} ({paper.date.split('T')[0]})
           </a>
         </li>
       ))}
