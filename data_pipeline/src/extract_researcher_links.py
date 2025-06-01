@@ -98,7 +98,7 @@ def run_researcher_info_extraction(
     processed_researcher_ids = {link.id for link in output_rll}
     
     researcher_map: Dict[int, Researcher] = {
-        r.id: r for r in scholar_info.researchers if r.id is not None and r.h_index > 1
+        r.id: r for r in scholar_info.researchers if r.id is not None and r.h_index is not None and r.h_index > 1
     }
     
     level1_topics = [t for t in scholar_info.topics if t.level == 1]

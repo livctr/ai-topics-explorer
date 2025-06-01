@@ -2,7 +2,7 @@
 This script fetches high-relevance papers and their authors from the Semantic Scholar API.
 """
 # Standard library imports
-import datetime
+import logging
 import re
 import time
 from datetime import date, timedelta
@@ -16,6 +16,8 @@ from urllib3.util import Retry
 
 # Local module imports
 from src.data_models import Paper, Researcher, ScholarInfo, write_scholar_info
+
+logging.basicConfig(level=logging.INFO)
 
 
 def remove_unmatched(text: str, open_sym: str, close_sym: str) -> str:
@@ -216,10 +218,11 @@ def get_high_relevance_papers(
     return papers_dict, authors_dict
 
 
-def fill_author_info(authors_dict: Dict[str, Researcher]) -> None:
+def fill_author_info(scholar_info: ScholarInfo) -> None:
     """
     Modifies the authors_dict in place with additional information from the Semantic Scholar API.
     """
+    authors_dict = {a.id: a for a in scholar_info.researchers if a.h_index is None}
     author_ids = list(authors_dict.keys())
     batch_limit = 1000
 
@@ -250,41 +253,18 @@ def fill_author_info(authors_dict: Dict[str, Researcher]) -> None:
                 continue
             author_id = researcher_data.get('authorId')
             if author_id in authors_dict:
-                researcher = authors_dict[author_id]
-                researcher.url = researcher_data.get('url')
-                researcher.affiliations = researcher_data.get('affiliations', [])
-                researcher.homepage = researcher_data.get('homepage')
-                researcher.h_index = researcher_data.get('hIndex')
+                try:
+                    researcher = authors_dict[author_id] if author_id in authors_dict else authors_dict[int(author_id)]
+                    researcher.url = researcher_data.get('url', '')
+                    researcher.affiliations = researcher_data.get('affiliations', [])
+                    researcher.homepage = researcher_data.get('homepage', '')
+                    researcher.h_index = researcher_data.get('hIndex', 0)
+                except Exception as e:
+                    logging.warning(
+                        f"Error updating researcher {author_id}: {e}. Data: {researcher_data}"
+                    )
+
+        write_scholar_info(scholar_info)
 
         # Respect rate limit
         time.sleep(15)
-
-
-def ingest_scholar_info(
-    top_per_month: int = 100,
-    num_months: int = 12,
-    fields_of_study: str = "Computer Science",
-) -> Tuple[List[Paper], List[Researcher]]:
-    
-    date = datetime.date.today().isoformat()
-
-    papers_dict, authors_dict = get_high_relevance_papers(
-        top_per_month=top_per_month,
-        num_months=num_months,
-        fields_of_study=fields_of_study
-    )
-
-    fill_author_info(authors_dict)
-
-    # Convert dictionaries to lists
-    papers_list = list(papers_dict.values())
-    researchers_list = list(authors_dict.values())
-
-    scholar_info = ScholarInfo(
-        date=date,
-        papers=papers_list,
-        researchers=researchers_list
-    )
-    write_scholar_info(scholar_info)
-
-    return scholar_info

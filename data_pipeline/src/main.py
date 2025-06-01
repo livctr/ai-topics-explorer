@@ -1,13 +1,15 @@
 from argparse import ArgumentParser
 
 from datetime import date
+import datetime
 
-from src.extract_scholar_info import ingest_scholar_info
+from src.extract_scholar_info import get_high_relevance_papers, fill_author_info
 from src.extract_topic_info import run_agentic_classification
 from src.extract_researcher_links import run_researcher_info_extraction
 from src.data_models import (
     load_scholar_info_from_file, write_scholar_info,
-    load_researcher_links_from_file, write_researcher_links
+    load_researcher_links_from_file, write_researcher_links,
+    ScholarInfo
 )
 
 
@@ -16,6 +18,11 @@ if __name__ == "__main__":
     parser.add_argument(
         "--force_paper_ingest",
         action='store_true',
+    )
+    parser.add_argument(
+        "--force_author_ingest",
+        action='store_true',
+        help="Force re-ingestion of author information."
     )
     parser.add_argument(
         "--top_per_month",
@@ -41,15 +48,31 @@ if __name__ == "__main__":
     last_ingestion_date = date.fromisoformat(scholar_info.date)
     today = date.today()
     is_outdated = (today - last_ingestion_date).days > 30
+
     if args.force_paper_ingest or is_outdated:
-        scholar_info = ingest_scholar_info(
+        papers_dict, authors_dict = get_high_relevance_papers(
             top_per_month=args.top_per_month,
-            num_months=args.num_months,
+            num_months=args.num_months
+        )
+
+        # Convert dictionaries to lists
+        papers_list = list(papers_dict.values())
+        researchers_list = list(authors_dict.values())
+
+        scholar_info = ScholarInfo(
+            date=today.isoformat(),
+            papers=papers_list,
+            researchers=researchers_list
         )
         write_scholar_info(scholar_info)
-        run_agentic_classification(scholar_info)
+
+    scholar_info = load_scholar_info_from_file()
+    if args.force_author_ingest or is_outdated:
+        fill_author_info(scholar_info)  # modifies scholar_info.researchers in place
+        run_agentic_classification(scholar_info)  # in place modification
+        write_scholar_info(scholar_info)
 
     # Always see if researcher links can be updated
     rll = load_researcher_links_from_file()
-    rll = run_researcher_info_extraction(rll, scholar_info, max_update=1)
+    rll = run_researcher_info_extraction(rll, scholar_info, max_update=20)
     write_researcher_links(rll)
