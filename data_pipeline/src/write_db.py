@@ -75,8 +75,9 @@ def ingest_scholar_info(cur: psycopg2.extensions.cursor, scholar_info: ScholarIn
         """, (topic.id, topic.name, topic.parent_id, topic.level, topic.is_leaf))
 
     # Insert researchers
+    researcher_ids = {researcher.id for researcher in scholar_info.researchers if researcher.h_index and researcher.h_index > 1}
     for researcher in scholar_info.researchers:
-        if researcher.h_index > 1:
+        if researcher.id in researcher_ids:
             cur.execute("""
                 INSERT INTO researcher (id, name, homepage, url, affiliation)
                 VALUES (%s, %s, %s, %s, %s)
@@ -97,13 +98,14 @@ def ingest_scholar_info(cur: psycopg2.extensions.cursor, scholar_info: ScholarIn
 
     # Insert works_in
     for works_in in scholar_info.works_in:
-        cur.execute("""
-            INSERT INTO works_in (researcher_id, topic_id, score)
-            VALUES (%s, %s, %s)
-            ON CONFLICT (researcher_id, topic_id) DO NOTHING;
-        """, (works_in.researcher_id,
-              works_in.topic_id,
-              works_in.score))
+        if works_in.researcher_id in researcher_ids:
+            cur.execute("""
+                INSERT INTO works_in (researcher_id, topic_id, score)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (researcher_id, topic_id) DO NOTHING;
+            """, (works_in.researcher_id,
+                works_in.topic_id,
+                works_in.score))
 
 
 def update_db(
