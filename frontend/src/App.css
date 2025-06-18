@@ -107,6 +107,14 @@ footer {
 .header-description p {
   color: var(--primary);
 }
+.header-description a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: bold;
+}
+.header-description a:hover {
+  text-decoration: underline;
+}
 /* End header layout */
 
 /* Main content */
@@ -232,6 +240,14 @@ footer {
 
 footer p {
   color: var(--primary);
+}
+footer a {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: bold;
+}
+footer a:hover {
+  text-decoration: underline;
 }
 /* End footer */
 
