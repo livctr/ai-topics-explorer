@@ -1,55 +1,26 @@
 Topic: Computer Vision
-Description: focuses on visual data processing, including image, 3D, or video analysis.
-Examples: object detection & recognition, image segmentation, video understanding, 3D vision & scene understanding
+Examples: object detection & recognition, image segmentation, depth estimation, video understanding, 3D vision & scene understanding
 
-Topic: Natural Language Processing
-Description: focuses on human language processing
-Examples: question answering, text processing, speech & audio
+Topic: Agentic AI & Reasoning
+Examples: reinforcement learning, causal reasoning
 
-Topic: Robotics
-Description: focuses on sensing, planning, and acting in the physical world
-Examples: perception, motion planning, multi-robot coordination
+Topic: Foundation Models & Multimodal AI
+Examples: network architectures, vision-language models, audio-text models, data-centric AI, self-supervised learning, curriculum learning
 
-Topic: Deep Learning
-Description: focuses on network architectures, optimization for deep networks, foundation models
-Examples: parameter-efficient fine-tuning, LLMs
+Topic: Generative Models & Diffusion
+Examples: generative adversarial networks (GANs), variational autoencoders (VAEs), diffusion models, normalizing flows, autoregressive models
 
-Topic: Generative AI / Diffusion
-Description: focuses on AI that can create new content, such as images, videos, and code
-Examples: diffusion, generation, variational inference
+Topic: AI Governance, Ethics, Safety, & Security
+Examples: fairness and bias mitigation, explainable AI, privacy-preserving ML, adversarial robustness, regulatory compliance, human-AI collaboration
 
-Topic: General Machine Learning
-Description: focuses on developing algorithms that enable computers to learn from data
-Examples: supervised, unsupervised, clustering, online learning, active learning
-
-Topic: AI Application
-Description: focuses on using AI in a particular application area
+Topic: AI Applications
 Examples: law, medicine, healthcare, science, education, finance, sustainability, transportation
 
-Topic: Theory
-Description: focuses on theoretical aspects of deep learning
-Examples: variational inference, deep learning theory, optimization, causal inference, Gaussian processes, uncertainty quantification
+Topic: Statistical Theory
+Examples: uncertainty quantification, Gaussian processes, Bayesian inference, conformal prediction
 
-Topic: Reinforcement Learning
-Description: involves learning through interaction, often in robotics and games
-Examples: Markov decision processes (MDPs), proximal policy optimization (PPO), RLHF, DPO, GRPO
+Topic: Information Retrieval
+Examples: indexing and ranking, query expansion, vector-space retrieval, semantic search, question answering systems, recommendation systems
 
-Topic: Trustworthy AI
-Description: addresses fairness, privacy, and interpretability in AI systems
-Examples: human-AI interaction, safety, SHAP, LIME, counterfactual explanations, bias detection & mitigation
-
-Topic: Data Mining & Knowledge Discovery
-Description: focuses on discovering patterns and extracting valuable knowledge from large datasets.
-Examples: clustering, association rule mining, anomaly detection, graph mining
-
-Topic: Optimization
-Description: focuses on mathematical techniques for finding the best solution from a set of feasible solutions, often applied to train ML models or solve complex problems.
-Examples: convex optimization, stochastic gradient descent, evolutionary algorithms, combinatorial optimization
-
-Topic: Recommender Systems
-Description: focuses on systems that predict user preferences and recommend items.
-Examples: collaborative filtering, content-based filtering, hybrid approaches, evaluation metrics
-
-Topic: Optimization
-Description: focuses on mathematical techniques for finding the best solution from a set of feasible solutions, often applied to train ML models or solve complex problems.
-Examples: convex optimization, stochastic gradient descent, evolutionary algorithms, combinatorial optimization
+Topic: Embodied AI
+Examples: egocentric perception, embodied interaction & manipulation, world modeling

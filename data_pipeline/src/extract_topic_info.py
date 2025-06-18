@@ -34,7 +34,7 @@ class PaperTopicOutput(BaseModel):
     """
     Represents the extracted analysis of a research paper.
     """
-    main_topic: str = Field(description="The main academic or research topic/field of the paper (e.g., 'Natural Language Processing', 'Computer Vision', 'Materials Science', 'Neuroscience').")
+    main_topic: str = Field(description="The main academic or research topic/field of the paper (e.g., 'Natural Language Processing', 'Computer Vision').")
     is_ai_related: bool = Field(description="True if the paper is directly or indirectly related to Artificial Intelligence, Machine Learning, Deep Learning, or a core AI subfield; otherwise False.")
 
 
@@ -358,8 +358,8 @@ def extract_paper_fields(state: PaperClassificationState, llm: ChatOpenAI, valid
         ),
         HumanMessagePromptTemplate.from_template(
             "Analyze the following paper based on its title and abstract. "
-            "Identify its main academic topic from the provided list, "
-            "and state whether it is related to Artificial Intelligence (AI). "
+            "If the paper is not related to Artificial Intelligence, classify it as 'Unclassified' and say it is not AI related. "
+            "Otherwise, state the paper is AI related and identify its main academic topic from the provided list. "
             "If the main focus of the paper is to apply AI to some application, classify it as 'AI Application'. \n\n"
             "Title: {title}\n"
             "Abstract: {abstract}\n\n"
@@ -422,36 +422,35 @@ def classify_or_generate_subtopic(state: PaperClassificationState, llm: ChatOpen
     # Prepare the part of the prompt that lists existing subtopics
     existing_subtopics_for_main_topic = subtopic_memory.get(main_topic, [])
     
+    instructions_prompt_part = (
+        "The subtopic should be chosen from the subtopics list if one of them fits well; "
+        "otherwise, you should generate a new subtopic (2-5 words) that is more specific than the main topic "
+        "but still general enough to allow for potential future reuse. "
+        "For example, subtopics within 'AI Applications' could be 'AI for Biology', 'AI for Finance', 'AI for Education', etc."
+    )
     if existing_subtopics_for_main_topic:
-        subtopics_list_str = "\n- ".join(existing_subtopics_for_main_topic)
-        subtopics_prompt_part = (
-            f"Consider these existing subtopics for '{main_topic}':\n"
-            f"- {subtopics_list_str}\n"
-            "If the paper (detailed below) fits well into one of these, please select it. "
-            "Otherwise, generate a new, concise subtopic for the paper (2-5 words) based on its content. "
-            "Aim to reuse existing subtopics where appropriate to maintain a limited set (ideally around 10 subtopics per main topic in total eventually). "
-            "Try to keep the subtopic as general as possible."
-        )
+        subtopics_prompt_part = "\n- " + "\n- ".join(existing_subtopics_for_main_topic)
+        if len(existing_subtopics_for_main_topic) >= 10:
+            instructions_prompt_part = (
+                "The subtopic should be chosen from the subtopics list. "
+            )
     else:
-        subtopics_prompt_part = (
-            "There are no existing subtopics for this main topic yet. "
-            "Please generate a new, concise subtopic (2-5 words) for the paper (detailed below) based on its content."
-        )
+        subtopics_prompt_part = "None."
 
     # Define the prompt template, now including title and abstract
     prompt_template = ChatPromptTemplate.from_messages([
         SystemMessagePromptTemplate.from_template(
             "You are an expert research assistant. Your task is to define a specific subtopic for a research paper "
-            "within its assigned main topic, based on the paper's title and abstract. Subtopics should be concise (2-5 words)."
+            "within its assigned main topic, based on the paper's title and abstract. "
+            "{instructions_prompt_part}"
         ),
         HumanMessagePromptTemplate.from_template(
             "Analyze the following paper details:\n"
             "Title: {title}\n"
-            "Abstract: {abstract}\n\n" # Abstract will be 'N/A' if originally None
-            "Main Topic: '{main_topic}'\n\n"
-            "{subtopics_prompt_part}\n\n"
-            "What is the most fitting subtopic for this paper? If generating a new one, ensure it's distinct and specific. "
-            "Return only the subtopic name."
+            "Abstract: {abstract}\n" # Abstract will be 'N/A' if originally None
+            "Main Topic: '{main_topic}'\n"
+            "Previous subtopics: {subtopics_prompt_part}\n\n"
+            "Return only the most fitting subtopic for this paper. "
         )
     ])
 
@@ -468,7 +467,8 @@ def classify_or_generate_subtopic(state: PaperClassificationState, llm: ChatOpen
             "title": title,
             "abstract": abstract_for_prompt,
             "main_topic": main_topic,
-            "subtopics_prompt_part": subtopics_prompt_part
+            "subtopics_prompt_part": subtopics_prompt_part,
+            "instructions_prompt_part": instructions_prompt_part
         })
         sub_topic_str = response.sub_topic.strip()
         logging.info(f"  Generated/Selected Subtopic for '{main_topic}': {sub_topic_str}")
