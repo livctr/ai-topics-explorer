@@ -72,7 +72,6 @@ if __name__ == "__main__":
 
     # Ingest researcher fields and details
     if args.force_author_ingest or is_outdated:
-        import pdb ; pdb.set_trace()
         scholar_info = load_scholar_info_from_file()
         fill_author_info(scholar_info)  # modifies scholar_info.researchers in place
         write_scholar_info(scholar_info)
@@ -85,5 +84,5 @@ if __name__ == "__main__":
 
     # Always see if researcher links can be updated
     rll = load_researcher_links_from_file()
-    rll = run_researcher_info_extraction(rll, scholar_info, max_update=20)
+    rll = run_researcher_info_extraction(rll, scholar_info, max_update=arg.max_researcher_updates)
     write_researcher_links(rll)

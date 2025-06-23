@@ -149,10 +149,13 @@ def load_scholar_info_from_file(
     research_link_path: Optional[str] = LINKS_PATH,
     merge_links: bool = True
 ) -> ScholarInfo:
-    with open(file_path, 'r') as f:
-        data = json.load(f)
-    scholar_info = ScholarInfo.model_validate(data)
-    if merge_links and research_link_path:
-        links = load_researcher_links_from_file(research_link_path)
-        scholar_info = merge_link_info_into_scholar_info(scholar_info, links)
-    return scholar_info
+    try:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        scholar_info = ScholarInfo.model_validate(data)
+        if merge_links and research_link_path:
+            links = load_researcher_links_from_file(research_link_path)
+            scholar_info = merge_link_info_into_scholar_info(scholar_info, links)
+        return scholar_info
+    except FileNotFoundError:
+        return ScholarInfo(date=date.today().isoformat())
