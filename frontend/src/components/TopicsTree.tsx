@@ -24,18 +24,18 @@ const TopicsTree: React.FC<TopicsTreeProps> = ({
   useEffect(() => {
     const initialExpanded = new Set<number>();
 
-    const traverse = (nodes: TopicNode[]) => {
-      nodes.forEach((node) => {
-        if (node.level <= 1 && !node.is_leaf) {
-          initialExpanded.add(node.id);
-        }
-        if (node.children && node.children.length > 0) {
-          traverse(node.children);
-        }
-      });
-    };
+    // const traverse = (nodes: TopicNode[]) => {
+    //   nodes.forEach((node) => {
+    //     if (node.level <= 1 && !node.is_leaf) {
+    //       initialExpanded.add(node.id);
+    //     }
+    //     if (node.children && node.children.length > 0) {
+    //       traverse(node.children);
+    //     }
+    //   });
+    // };
 
-    traverse(topicsTree);
+    // traverse(topicsTree);
     setExpandedTopics(initialExpanded);
   }, [topicsTree]);
 

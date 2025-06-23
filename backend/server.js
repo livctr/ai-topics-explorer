@@ -117,7 +117,7 @@ function orderTopicsHierarchically(topics) {
 app.get("/researchers", async (req, res) => {
   try {
     const queryText = `
-      SELECT r.id, r.name, r.homepage, r.url, r.affiliation
+      SELECT r.id, r.name, r.homepage, r.url, r.affiliation, r.h_index
       FROM researcher r
     `;
 

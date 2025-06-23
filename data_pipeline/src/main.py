@@ -4,7 +4,7 @@ from datetime import date
 import datetime
 
 from src.extract_scholar_info import get_high_relevance_papers, fill_author_info
-from src.extract_topic_info import run_agentic_classification
+from src.extract_topic_info import run_topics_classification
 from src.extract_researcher_links import run_researcher_info_extraction
 from src.data_models import (
     load_scholar_info_from_file, write_scholar_info,
@@ -23,6 +23,10 @@ if __name__ == "__main__":
         "--force_author_ingest",
         action='store_true',
         help="Force re-ingestion of author information."
+    )
+    parser.add_argument(
+        "--force_topics_ingest",
+        action='store_true',
     )
     parser.add_argument(
         "--top_per_month",
@@ -49,6 +53,7 @@ if __name__ == "__main__":
     today = date.today()
     is_outdated = (today - last_ingestion_date).days > 30
 
+    # Ingest papers and researcher IDs
     if args.force_paper_ingest or is_outdated:
         papers_dict, authors_dict = get_high_relevance_papers(
             top_per_month=args.top_per_month,
@@ -66,10 +71,17 @@ if __name__ == "__main__":
         )
         write_scholar_info(scholar_info)
 
-    scholar_info = load_scholar_info_from_file()
+    # Ingest researcher fields and details
     if args.force_author_ingest or is_outdated:
+        import pdb ; pdb.set_trace()
+        scholar_info = load_scholar_info_from_file()
         fill_author_info(scholar_info)  # modifies scholar_info.researchers in place
-        run_agentic_classification(scholar_info)  # in place modification
+        write_scholar_info(scholar_info)
+
+    # Run agentic classification to extract topics
+    if args.force_topics_ingest or is_outdated:
+        scholar_info = load_scholar_info_from_file()
+        run_topics_classification(scholar_info)  # in place modification
         write_scholar_info(scholar_info)
 
     # Always see if researcher links can be updated

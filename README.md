@@ -25,6 +25,7 @@ pip install -r requirements-build.txt
 python -m src.main \
     --force_paper_ingest            # Re-ingest paper data even if already processed.         (default: False)
     --force_author_ingest           # Re-ingest author data even if already processed.        (default: False)
+    --force_topics_ingest           # Re-ingest topics classification
     --top_per_month 50              # Number of top papers to ingest per month.              (default: 50)
     --num_months 12                 # How many past months of data to consider.              (default: 12)
     --max_researcher_updates 20     # Maximum number of researcher links to update.          (default: 20)

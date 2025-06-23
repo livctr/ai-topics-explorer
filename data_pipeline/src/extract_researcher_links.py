@@ -98,9 +98,9 @@ def run_researcher_info_extraction(
     processed_researcher_ids = {link.id for link in output_rll}
     
     researcher_map: Dict[int, Researcher] = {
-        r.id: r for r in scholar_info.researchers if r.id is not None and r.h_index is not None and r.h_index > 1
+        r.id: r for r in scholar_info.researchers if r.id is not None and r.h_index is not None and r.h_index >= 1
     }
-    
+
     level1_topics = [t for t in scholar_info.topics if t.level == 1]
     if not level1_topics:
         logger.info("No level 1 topics found. Returning initial researcher links.")
@@ -119,7 +119,7 @@ def run_researcher_info_extraction(
             topic_candidate_queues[topic.id] = candidates_for_topic
     
     if not topic_candidate_queues:
-        logger.info("No candidate researchers found in any level 1 topic queues after filtering.")
+        logger.info("No candidate researchers w/ non-null h-index >= 1 found in any level 1 topic queues after filtering.")
         return output_rll
 
     updates_done = 0

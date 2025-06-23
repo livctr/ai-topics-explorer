@@ -17,7 +17,10 @@ def return_conn():
     return conn
 
 
-def init_tables_for_ingestion(cur: psycopg2.extensions.cursor):
+def init_tables_for_ingestion(cur: psycopg2.extensions.cursor, clear_tables: bool = True, rebuild_tables: bool = True):
+
+    if rebuild_tables:
+        cur.execute("DROP TABLE IF EXISTS topic, researcher, paper, works_in;")
     
     cur.execute("""
         CREATE TABLE IF NOT EXISTS topic (
@@ -35,7 +38,8 @@ def init_tables_for_ingestion(cur: psycopg2.extensions.cursor):
             name TEXT NOT NULL,
             homepage TEXT,
             url TEXT,
-            affiliation TEXT
+            affiliation TEXT,
+            h_index INT CHECK (h_index >= 0)
         );
     """)
 
@@ -64,6 +68,9 @@ def init_tables_for_ingestion(cur: psycopg2.extensions.cursor):
         );
     """)
 
+    if clear_tables:
+        cur.execute("TRUNCATE TABLE topic, researcher, paper, works_in;")
+
 
 def ingest_scholar_info(cur: psycopg2.extensions.cursor, scholar_info: ScholarInfo):
     # Insert topics
@@ -75,14 +82,16 @@ def ingest_scholar_info(cur: psycopg2.extensions.cursor, scholar_info: ScholarIn
         """, (topic.id, topic.name, topic.parent_id, topic.level, topic.is_leaf))
 
     # Insert researchers
-    researcher_ids = {researcher.id for researcher in scholar_info.researchers if researcher.h_index and researcher.h_index > 1}
+    researcher_ids = {researcher.id for researcher in scholar_info.researchers if researcher.h_index and researcher.h_index >= 5}
     for researcher in scholar_info.researchers:
         if researcher.id in researcher_ids:
             cur.execute("""
-                INSERT INTO researcher (id, name, homepage, url, affiliation)
-                VALUES (%s, %s, %s, %s, %s)
+                INSERT INTO researcher (id, name, homepage, url, affiliation, h_index)
+                VALUES (%s, %s, %s, %s, %s, %s)
                 ON CONFLICT (id) DO NOTHING;
-            """, (researcher.id, researcher.name, researcher.homepage, researcher.url, researcher.affiliations[0] if researcher.affiliations else None))
+            """, (researcher.id, researcher.name, researcher.homepage, researcher.url,
+                researcher.affiliations[0] if researcher.affiliations else None,
+                researcher.h_index or 0))
 
     # Insert papers
     for paper in scholar_info.papers:

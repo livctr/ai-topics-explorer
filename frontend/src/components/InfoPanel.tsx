@@ -9,12 +9,14 @@ interface InfoPanelProps {
   topics: Topic[];
   papers: Paper[];
   selectedTopic: Topic;
+  selectedTopicAndSubtopics: Topic[];
 }
 
 const InfoPanel: React.FC<InfoPanelProps> = ({
   topics,
   papers,
   selectedTopic,
+  selectedTopicAndSubtopics,
 }) => {
 
   // activeSection can be either "papers" or "researchers".
@@ -43,6 +45,8 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
           (await axios.get<Researcher[]>(`${BACKEND}/researchers`)),
           (await axios.get<WorksIn[]>(`${BACKEND}/works_in`)),
         ]);
+        console.log("Fetched researchers and works_in data");
+        console.log("Researchers:", resResearchers.data);
         setResearchers(resResearchers.data);
         setWorksIn(resWorksIn.data);
       } catch (err) {
@@ -95,7 +99,7 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
               // Render PapersList when the papers view is active.
               papers ? (
                 <PapersList
-                  selectedTopic={selectedTopic}
+                  selectedTopics={selectedTopicAndSubtopics}
                   papers={papers}
                 />
               ) : (

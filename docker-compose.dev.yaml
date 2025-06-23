@@ -4,7 +4,7 @@ services:
       context: ./backend
       dockerfile: Dockerfile
     env_file:
-      - prod.env
+      - .env
     ports:
       - "3000:3000"
     depends_on:
@@ -33,7 +33,7 @@ services:
   database:
     image: postgres:17
     env_file:
-      - prod.env
+      - .env
     ports:
       - "5432:5432"
     volumes:
@@ -50,7 +50,7 @@ services:
       --max_results 5
       --limit 100
     env_file:
-      - prod.env
+      - .env
     depends_on:
       - database
     restart: "no"
@@ -74,7 +74,7 @@ services:
       --sample_freq 100
       --new_topic_threshold 20
     env_file:
-      - prod.env
+      - .env
     depends_on:
       - database
     restart: "no"

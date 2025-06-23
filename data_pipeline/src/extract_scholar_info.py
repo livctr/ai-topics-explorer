@@ -2,6 +2,7 @@
 This script fetches high-relevance papers and their authors from the Semantic Scholar API.
 """
 # Standard library imports
+import os
 import logging
 import re
 import time
@@ -138,6 +139,7 @@ def get_high_relevance_papers_by_date(
 
     fields = "paperId,title,authors,citationCount,url,abstract,publicationDate"
     sort = "citationCount:desc"
+    headers = {"x-api-key": os.getenv("S2_API_KEY")} if os.getenv("S2_API_KEY") else {}
 
     response = http.get(
         "https://api.semanticscholar.org/graph/v1/paper/search/bulk",
@@ -146,7 +148,8 @@ def get_high_relevance_papers_by_date(
             'fieldsOfStudy': fields_of_study,
             'sort': sort,
             'publicationDateOrYear': date_filter,
-        }
+        },
+        headers=headers
     )
 
     response.raise_for_status()
@@ -225,6 +228,7 @@ def fill_author_info(scholar_info: ScholarInfo) -> None:
     authors_dict = {a.id: a for a in scholar_info.researchers if a.h_index is None}
     author_ids = list(authors_dict.keys())
     batch_limit = 1000
+    headers = {"x-api-key": os.getenv("S2_API_KEY")} if os.getenv("S2_API_KEY") else {}
 
     for i in tqdm(range(0, len(author_ids), batch_limit), desc="Fetching author info..."):
         batch_ids = author_ids[i:i + batch_limit]
@@ -242,7 +246,8 @@ def fill_author_info(scholar_info: ScholarInfo) -> None:
         response = http.post(
             'https://api.semanticscholar.org/graph/v1/author/batch',
             params={'fields': fields},
-            json={"ids": batch_ids}
+            json={"ids": batch_ids},
+            headers=headers
         )
 
         response.raise_for_status()
@@ -252,7 +257,7 @@ def fill_author_info(scholar_info: ScholarInfo) -> None:
             if researcher_data is None or 'authorId' not in researcher_data:
                 continue
             author_id = researcher_data.get('authorId')
-            if author_id in authors_dict:
+            if author_id in authors_dict or int(author_id) in authors_dict:
                 try:
                     researcher = authors_dict[author_id] if author_id in authors_dict else authors_dict[int(author_id)]
                     researcher.url = researcher_data.get('url', '')

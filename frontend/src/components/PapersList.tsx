@@ -11,28 +11,24 @@ export interface Paper {
 }
 
 interface PapersListProps {
-  selectedTopic: Topic;
+  selectedTopics: Topic[];
   papers: Paper[];
 }
 
 const PapersList: React.FC<PapersListProps> = ({
-  selectedTopic,
+  selectedTopics,
   papers,
 }) => {
-  // Filter papers that match the selected topic.
+  // Filter papers that is in the List of selected topics.
   const filteredPapers = papers.filter(
-    (paper) => paper.topic_id === selectedTopic.id
+    (paper) => selectedTopics.some(
+      (topic) => topic.id === paper.topic_id
+    )
   );
 
-
   if (filteredPapers.length === 0) {
-    if (selectedTopic.is_leaf) {
-      return <p>No papers found for {selectedTopic.name}.</p>;
-    } else {
-      return <p>Click on a sub-topic to see a list of papers!</p>
-    }
+    return <p>No papers found for this topic or its subtopics.</p>
   }
-
 
   return (
     <ul className="papers-list list-start">
