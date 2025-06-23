@@ -6,14 +6,8 @@ export interface Paper {
   title: string;
   citation_count: number;
   url: string;
-<<<<<<< HEAD
-  date: Date;
-  topic_id: number;
-  num_authors: number;
-=======
   date: string;
   topic_id: number;
->>>>>>> agentic_classification
 }
 
 interface PapersListProps {
@@ -51,11 +45,7 @@ const PapersList: React.FC<PapersListProps> = ({
             <span className="arrow expanded">▸</span>
           </span>
           <a
-<<<<<<< HEAD
-            href={paper.url}
-=======
             href={`${paper.url}`}
->>>>>>> agentic_classification
             target="_blank"
             rel="noopener noreferrer"
           >

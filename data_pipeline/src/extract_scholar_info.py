@@ -1,13 +1,3 @@
-<<<<<<< HEAD:data_pipeline/src/search_semantic_scholar.py
-from requests import Session
-from requests.adapters import HTTPAdapter
-from urllib3.util import Retry
-from datetime import date, timedelta
-from typing import Dict, Any
-import time
-from tqdm import tqdm
-import re
-=======
 """
 This script fetches high-relevance papers and their authors from the Semantic Scholar API.
 """
@@ -24,7 +14,6 @@ from requests import Session
 from requests.adapters import HTTPAdapter
 from tqdm import tqdm
 from urllib3.util import Retry
->>>>>>> agentic_classification:data_pipeline/src/extract_scholar_info.py
 
 # Local module imports
 from src.data_models import Paper, Researcher, ScholarInfo, write_scholar_info
