@@ -8,4 +8,4 @@ Requests==2.32.3
 tavily-python==0.7.3
 tqdm==4.66.4
 typing_extensions==4.13.2
-urllib3==2.4.0
+urllib3==2.5.0
