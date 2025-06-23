@@ -6,34 +6,35 @@ export interface Paper {
   title: string;
   citation_count: number;
   url: string;
+<<<<<<< HEAD
   date: Date;
   topic_id: number;
   num_authors: number;
+=======
+  date: string;
+  topic_id: number;
+>>>>>>> agentic_classification
 }
 
 interface PapersListProps {
-  selectedTopic: Topic;
+  selectedTopics: Topic[];
   papers: Paper[];
 }
 
 const PapersList: React.FC<PapersListProps> = ({
-  selectedTopic,
+  selectedTopics,
   papers,
 }) => {
-  // Filter papers that match the selected topic.
+  // Filter papers that is in the List of selected topics.
   const filteredPapers = papers.filter(
-    (paper) => paper.topic_id === selectedTopic.id
+    (paper) => selectedTopics.some(
+      (topic) => topic.id === paper.topic_id
+    )
   );
 
-
   if (filteredPapers.length === 0) {
-    if (selectedTopic.is_leaf) {
-      return <p>No papers found for {selectedTopic.name}.</p>;
-    } else {
-      return <p>Click on a sub-topic to see a list of papers!</p>
-    }
+    return <p>No papers found for this topic or its subtopics.</p>
   }
-
 
   return (
     <ul className="papers-list list-start">
@@ -50,11 +51,15 @@ const PapersList: React.FC<PapersListProps> = ({
             <span className="arrow expanded">▸</span>
           </span>
           <a
+<<<<<<< HEAD
             href={paper.url}
+=======
+            href={`${paper.url}`}
+>>>>>>> agentic_classification
             target="_blank"
             rel="noopener noreferrer"
           >
-            {paper.title} ({paper.date.toLocaleDateString()})
+            {paper.title} ({paper.date.split('T')[0]})
           </a>
         </li>
       ))}

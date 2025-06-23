@@ -1,0 +1,55 @@
+Computer Vision
+    Object Detection & Recognition
+    Image Segmentation
+    Depth Estimation
+    Video Understanding
+    3D Vision & Scene Understanding
+Agentic AI & Reasoning
+    Reinforcement Learning
+    Causal Reasoning
+Foundation Models & Multimodal AI
+    Network Architectures
+    Vision-Language Models
+    Audio-Text Models
+    Data-Centric AI
+    Self-Supervised Learning
+    Curriculum Learning
+Generative Models & Diffusion
+    Generative Adversarial Networks (GANs)
+    Variational Autoencoders (VAEs)
+    Diffusion Models
+    Normalizing Flows
+    Autoregressive Models
+AI Governance, Ethics, Safety, & Security
+    Fairness And Bias Mitigation
+    Explainable AI
+    Privacy-Preserving ML
+    Adversarial Robustness
+    Regulatory Compliance
+    Human-AI Collaboration
+AI Applications
+    AI for Law
+    AI for Medicine
+    AI for Healthcare
+    AI for Science
+    AI for Education
+    AI for Finance
+    AI for Sustainability
+    AI for Transportation
+Statistical Theory
+    Uncertainty Quantification
+    Gaussian Processes
+    Bayesian Inference
+    Conformal Prediction
+Information Retrieval
+    Indexing And Ranking
+    Query Expansion
+    Vector-Space Retrieval
+    Semantic Search
+    Question Answering Systems
+    Recommendation Systems
+Embodied AI
+    Egocentric Perception
+    Embodied Interaction & Manipulation
+    World Modeling
+Other

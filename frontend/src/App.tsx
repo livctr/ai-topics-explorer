@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState, useMemo } from "react";
 import TopicsTree from "./components/TopicsTree";
 import InfoPanel from "./components/InfoPanel";
 import { YEAR, BACKEND } from "./const";
@@ -31,26 +31,16 @@ const App: React.FC = () => {
       ]);
       console.log("fetched topics and papers");
 
-      // Set topics and tree
       setTopics(resTopics.data);
       setTree(buildTree(resTopics.data));
 
-      // Convert the paper dates to Date objects
-      const parsedPapers = resPapers.data.map((p) => ({
-        ...p,
-        date: new Date(p.date),
-      }));
+      const parsedPapers = resPapers.data;
       setPapers(parsedPapers);
-      console.log("parsed papers");
-      console.log(parsedPapers);
 
-      // Calculate the min and max dates
       if (parsedPapers.length > 0) {
-        const times = parsedPapers.map((p) => p.date.getTime());
-        const minTime = Math.min(...times);
-        const maxTime = Math.max(...times);
-        setMinDate(new Date(minTime));
-        setMaxDate(new Date(maxTime));
+        const times = parsedPapers.map((p) => new Date(p.date).getTime());
+        setMinDate(new Date(Math.min(...times)));
+        setMaxDate(new Date(Math.max(...times)));
       }
 
       setFetched(true);
@@ -63,6 +53,36 @@ const App: React.FC = () => {
     fetchTopicsTreeAndPapers();
   }, []);
 
+  // derive all selectedTopic IDs including subtopics
+  const selectedTopicAndSubtopics = useMemo(() => {
+    if (!selectedTopic || selectedTopic.id === -1) return [];
+    const result: Topic[] = [];
+    // map from id to node for quick lookup
+    const map = new Map<number, TopicNode>();
+    const buildMap = (nodes: TopicNode[]) => {
+      nodes.forEach((n) => {
+        map.set(n.id, n);
+        if (n.children.length) buildMap(n.children);
+      });
+    };
+    buildMap(tree);
+    // depth-first collect
+    const collect = (node: TopicNode) => {
+      result.push({
+        id: node.id,
+        name: node.name,
+        parent_id: node.parent_id,
+        is_leaf: node.is_leaf,
+        level: node.level,
+      });
+      node.children.forEach(collect);
+    };
+    const rootNode = map.get(selectedTopic.id);
+    if (rootNode) collect(rootNode);
+    console.log("Selected topic and subtopics:", result);
+    return result;
+  }, [selectedTopic, tree]);
+
   let date_string = "";
   if (minDate && maxDate) {
     date_string = ` and consists of papers from ${minDate.toLocaleDateString()} to ${maxDate.toLocaleDateString()}`;
@@ -74,46 +94,16 @@ const App: React.FC = () => {
         <h1>AI Topics Explorer 2025</h1>
         <div className="header-description">
           <p>
-            Explore the latest research in artificial intelligence.{" "}
-            <strong>Click on a topic</strong> to explore its most recent papers
-            and the researchers pioneering the field. The data is sourced from{" "}
-            <a href="https://arxiv.org/">arXiv</a> publications made publicly
-            available on{" "}
-            <a href="https://www.kaggle.com/datasets/Cornell-University/arxiv">
-              Kaggle
-            </a>
-            {date_string}. The topic taxonomy on the left is the result of
-            asking{" "}
-            <a href="https://openai.com/index/gpt-4o-mini-advancing-cost-efficient-intelligence/">
-              gpt-4o-mini
-            </a>{" "}
-            to classify papers into topics. Also,{" "}
-            <strong>please note the following disclaimers</strong>:
+            Explore the latest research in artificial intelligence. <strong>Click on a topic</strong> to explore its most recent papers
+            and the researchers pioneering the field. The data is sourced from the amazing{' '}
+            <a href="https://www.semanticscholar.org/product/api">Semantic Scholar API</a>, accessed on{date_string}.
+            The topic taxonomy on the left is the result of asking{' '}
+            <a href="https://platform.openai.com/docs/models/gpt-4.1-mini">gpt-4.1-mini</a>{' '}
+            to classify papers into topics. Also, <strong>please note the following disclaimers</strong>:
           </p>
-          <p>
-            (1) The results below do not disambiguate researchers with the same
-            name. As such, many researchers with the same name could be counted
-            as one person,{" "}
-            <em>
-              artificially inflating their number of publications and hence
-              their rankings
-            </em>
-            .
-          </p>
-          <p>
-            (2) Affiliations and links are being continuously updated, sourced
-            via Google search + LLM. They are not 100% accurate and can refer to
-            the wrong person - especially same-name researchers.
-          </p>
-          <p>
-            (3) The coarse criteria for a researcher to be included is having published
-            more than 20+ papers on arXiv in the past 2 years. This criteria
-            ignores the quality of the papers (e.g., acceptance to top
-            conferences) and disadvantages researchers who publish fewer but
-            highly impactful works. While the number of papers is an indicator
-            of productivity, it is not a definite measure of a researcher's
-            overall impact. This criteria is used due to data availability.
-          </p>
+          <p>(1) The results below do not disambiguate researchers with the same name. As such, many researchers with the same name could be counted as one person, <em>artificially inflating their number of publications and hence their rankings</em>.</p>
+          <p>(2) Affiliations and links are being continuously updated, sourced via Tavily search + LLM. They are not 100% accurate and can refer to the wrong person - especially same-name researchers.</p>
+          <p>(3) The criteria for paper inclusion is being in the top 50 by citations per month, for the past 12 months (total less than 600 papers). The criteria for author inclusion is being an author on one of those papers and having an H index greater than or equal to 5.</p>
         </div>
       </header>
       <main className="main-content">
@@ -126,23 +116,15 @@ const App: React.FC = () => {
           topics={topics}
           papers={papers}
           selectedTopic={selectedTopic}
+          selectedTopicAndSubtopics={selectedTopicAndSubtopics}
         />
       </main>
 
       <footer>
-        <p>
-          AI Topics Explorer is licensed under the{" "}
-          <a
-            href="https://www.apache.org/licenses/LICENSE-2.0"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Apache License 2.0
-          </a>
-          .
+        <p>AI Topics Explorer is licensed under the{' '}
+          <a href="https://www.apache.org/licenses/LICENSE-2.0" target="_blank" rel="noopener noreferrer">Apache License 2.0</a>.
         </p>
-        <p>
-          Copyright &copy; <span id="year">{YEAR}</span> by{" "}
+        <p>Copyright &copy; <span id="year">{YEAR}</span> by{' '}
           <a href="https://livctr.github.io">Victor Li</a>.
         </p>
       </footer>

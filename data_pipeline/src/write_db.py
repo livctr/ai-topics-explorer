@@ -1,12 +1,16 @@
 import psycopg2
-from psycopg2.extras import execute_values
 import os
 from dotenv import load_dotenv
+<<<<<<< HEAD
 from datetime import datetime
+=======
+from src.data_models import ScholarInfo
+>>>>>>> agentic_classification
 
 load_dotenv()
 
 
+<<<<<<< HEAD
 def build_topics(
     supercluster_to_clusters,
     super_topics,
@@ -133,6 +137,8 @@ def build_data(
     return topics, researchers, papers, works_in
 
 
+=======
+>>>>>>> agentic_classification
 def return_conn():
     conn = psycopg2.connect(
         dbname=os.getenv("POSTGRES_DB"),
@@ -144,7 +150,10 @@ def return_conn():
     return conn
 
 
-def init_tables_for_ingestion(cur: psycopg2.extensions.cursor):
+def init_tables_for_ingestion(cur: psycopg2.extensions.cursor, clear_tables: bool = True, rebuild_tables: bool = True):
+
+    if rebuild_tables:
+        cur.execute("DROP TABLE IF EXISTS topic, researcher, paper, works_in;")
     
     cur.execute("""
         CREATE TABLE IF NOT EXISTS topic (
@@ -158,11 +167,20 @@ def init_tables_for_ingestion(cur: psycopg2.extensions.cursor):
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS researcher (
+<<<<<<< HEAD
             id TEXT PRIMARY KEY,
             name TEXT NOT NULL,
             homepage TEXT,
             url TEXT,
             affiliation TEXT  -- primary affiliation
+=======
+            id BIGINT PRIMARY KEY,
+            name TEXT NOT NULL,
+            homepage TEXT,
+            url TEXT,
+            affiliation TEXT,
+            h_index INT CHECK (h_index >= 0)
+>>>>>>> agentic_classification
         );
     """)
 
@@ -184,42 +202,26 @@ def init_tables_for_ingestion(cur: psycopg2.extensions.cursor):
 
     cur.execute("""
         CREATE TABLE IF NOT EXISTS works_in (
+<<<<<<< HEAD
             researcher_id TEXT REFERENCES researcher(id) ON DELETE CASCADE,
+=======
+            researcher_id BIGINT REFERENCES researcher(id) ON DELETE CASCADE,
+>>>>>>> agentic_classification
             topic_id INT REFERENCES topic(id) ON DELETE CASCADE,
             score FLOAT CHECK (score >= 0),
             PRIMARY KEY (researcher_id, topic_id)
         );
     """)
 
-def insert_topics(
-    cur: psycopg2.extensions.cursor,
-    topic_rows,
-):
-    # Delete old topics
-    cur.execute("""DELETE FROM topic;""")
-    # Perform batch insert with ON CONFLICT UPDATE
-    topic_query = """
-    INSERT INTO topic (id, name, parent_id, level, is_leaf)
-    VALUES %s
-    ON CONFLICT (id)
-    DO UPDATE SET
-        name = EXCLUDED.name,
-        parent_id = EXCLUDED.parent_id,
-        level = EXCLUDED.level,
-        is_leaf = EXCLUDED.is_leaf;
-    """
-    execute_values(cur, topic_query, topic_rows)
+    if clear_tables:
+        cur.execute("TRUNCATE TABLE topic, researcher, paper, works_in;")
 
 
-def update_researchers(
-    cur: psycopg2.extensions.cursor,
-    researcher_rows,
-    delete_old_researchers=True,
-):
-    # Delete researchers not in the authors_dict
-    researcher_ids = [row[0] for row in researcher_rows]
-    if delete_old_researchers:
+def ingest_scholar_info(cur: psycopg2.extensions.cursor, scholar_info: ScholarInfo):
+    # Insert topics
+    for topic in scholar_info.topics:
         cur.execute("""
+<<<<<<< HEAD
             DELETE FROM researcher
             WHERE id NOT IN (
                 SELECT unnest(%s::text[])
@@ -232,8 +234,26 @@ def update_researchers(
     DO NOTHING;
     """  # TODO: check homepage/url/affiliation every once in a while
     execute_values(cur, researcher_query, researcher_rows)
+=======
+            INSERT INTO topic (id, name, parent_id, level, is_leaf)
+            VALUES (%s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO NOTHING;
+        """, (topic.id, topic.name, topic.parent_id, topic.level, topic.is_leaf))
+>>>>>>> agentic_classification
 
+    # Insert researchers
+    researcher_ids = {researcher.id for researcher in scholar_info.researchers if researcher.h_index and researcher.h_index >= 5}
+    for researcher in scholar_info.researchers:
+        if researcher.id in researcher_ids:
+            cur.execute("""
+                INSERT INTO researcher (id, name, homepage, url, affiliation, h_index)
+                VALUES (%s, %s, %s, %s, %s, %s)
+                ON CONFLICT (id) DO NOTHING;
+            """, (researcher.id, researcher.name, researcher.homepage, researcher.url,
+                researcher.affiliations[0] if researcher.affiliations else None,
+                researcher.h_index or 0))
 
+<<<<<<< HEAD
 def insert_papers(
     cur: psycopg2.extensions.cursor,
     paper_rows,
@@ -259,23 +279,33 @@ def insert_papers(
         num_authors = EXCLUDED.num_authors;
     """
     execute_values(cur, paper_query, paper_rows)
+=======
+    # Insert papers
+    for paper in scholar_info.papers:
+        cur.execute("""
+            INSERT INTO paper (id, title, citation_count, url, date, topic_id, num_authors)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            ON CONFLICT (id) DO NOTHING;
+        """, (paper.id, paper.title, paper.citation_count or 0,
+              paper.url or None,
+              paper.date,
+              paper.topic_id,
+              len(paper.researcher_ids)))
+>>>>>>> agentic_classification
+
+    # Insert works_in
+    for works_in in scholar_info.works_in:
+        if works_in.researcher_id in researcher_ids:
+            cur.execute("""
+                INSERT INTO works_in (researcher_id, topic_id, score)
+                VALUES (%s, %s, %s)
+                ON CONFLICT (researcher_id, topic_id) DO NOTHING;
+            """, (works_in.researcher_id,
+                works_in.topic_id,
+                works_in.score))
 
 
-def insert_works_in(
-    cur: psycopg2.extensions.cursor,
-    works_in_rows,
-):
-    cur.execute("""DELETE FROM works_in;""")
-    works_in_query = """
-    INSERT INTO works_in (researcher_id, topic_id, score)
-    VALUES %s
-    ON CONFLICT (researcher_id, topic_id)
-    DO UPDATE SET
-        score = EXCLUDED.score;
-    """
-    execute_values(cur, works_in_query, works_in_rows)
-
-
+<<<<<<< HEAD
 def update_db(data):
     conn = return_conn()
     cur = conn.cursor()
@@ -287,3 +317,21 @@ def update_db(data):
     conn.commit()
     cur.close()
     conn.close()
+=======
+def update_db(
+    scholar_info: ScholarInfo,
+):
+    conn = return_conn()
+    cur = conn.cursor()
+    init_tables_for_ingestion(cur)
+    ingest_scholar_info(cur, scholar_info)
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+if __name__ == "__main__":
+    from src.data_models import load_scholar_info_from_file
+    scholar_info = load_scholar_info_from_file()
+    update_db(scholar_info)
+>>>>>>> agentic_classification
