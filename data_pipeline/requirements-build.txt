@@ -1,17 +1,3 @@
-<<<<<<< HEAD
---extra-index-url https://download.pytorch.org/whl/cu118
-
-datetime
-k-means-constrained
-numpy
-python-dotenv
-psycopg2-binary
-torch
-torchvision
-torchaudio
-transformers
-tqdm
-=======
 langchain_core==0.3.61
 langchain_openai==0.3.18
 langgraph==0.4.7
@@ -23,4 +9,3 @@ tavily-python==0.7.3
 tqdm==4.66.4
 typing_extensions==4.13.2
 urllib3==2.4.0
->>>>>>> agentic_classification
