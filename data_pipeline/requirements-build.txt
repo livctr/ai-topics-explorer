@@ -1,4 +1,4 @@
-langchain_core==0.3.61
+langchain_core==0.3.69
 langchain_openai==0.3.18
 langgraph==0.4.7
 psycopg2_binary==2.9.10
