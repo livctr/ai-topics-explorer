@@ -4,8 +4,10 @@ import InfoPanel from "./components/InfoPanel";
 import { YEAR, BACKEND } from "./const";
 import "./App.css";
 import { Topic, TopicNode, buildTree } from "./types/Topic";
-import axios from "axios";
 import { Paper } from "./components/PapersList";
+
+import { getTopics, getPapers } from "./supabase-client";
+import SupabaseProbe from "./SupabaseProbe";
 
 const App: React.FC = () => {
   const [selectedTopic, setSelectedTopic] = useState<Topic>({
@@ -25,20 +27,18 @@ const App: React.FC = () => {
   const fetchTopicsTreeAndPapers = async () => {
     if (fetched) return;
     try {
-      const [resTopics, resPapers] = await Promise.all([
-        axios.get<Topic[]>(`${BACKEND}/topics`),
-        axios.get<Paper[]>(`${BACKEND}/papers`),
-      ]);
-      console.log("fetched topics and papers");
+      const [topics, papers] = await Promise.all([getTopics(), getPapers()]);
+      setTopics(topics);
+      setPapers(papers);
 
-      setTopics(resTopics.data);
-      setTree(buildTree(resTopics.data));
+      setTopics(topics);
+      const tree = buildTree(topics);
+      setTree(tree);
 
-      const parsedPapers = resPapers.data;
-      setPapers(parsedPapers);
+      setPapers(papers);
 
-      if (parsedPapers.length > 0) {
-        const times = parsedPapers.map((p) => new Date(p.date).getTime());
+      if (papers.length > 0) {
+        const times = papers.map((p) => new Date(p.date).getTime());
         setMinDate(new Date(Math.min(...times)));
         setMaxDate(new Date(Math.max(...times)));
       }

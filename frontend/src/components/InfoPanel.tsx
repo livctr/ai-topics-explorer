@@ -2,8 +2,8 @@ import { useState, useEffect } from "react";
 import ResearchersList, { Researcher, WorksIn } from "./ResearchersList";
 import PapersList, { Paper } from "./PapersList";
 import { Topic } from "../types/Topic";
-import { BACKEND } from "../const";
-import axios from "axios";
+
+import { getResearchers, getWorksIn } from "../supabase-client";
 
 interface InfoPanelProps {
   topics: Topic[];
@@ -41,14 +41,10 @@ const InfoPanel: React.FC<InfoPanelProps> = ({
   const handleResearchersClick = async () => {
     if (!researchers || !worksIn) {
       try {
-        const [resResearchers, resWorksIn] = await Promise.all([
-          (await axios.get<Researcher[]>(`${BACKEND}/researchers`)),
-          (await axios.get<WorksIn[]>(`${BACKEND}/works_in`)),
-        ]);
+        const [r, w] = await Promise.all([getResearchers(), getWorksIn()]);
         console.log("Fetched researchers and works_in data");
-        console.log("Researchers:", resResearchers.data);
-        setResearchers(resResearchers.data);
-        setWorksIn(resWorksIn.data);
+        setResearchers(r as Researcher[]);
+        setWorksIn(w as WorksIn[]);
       } catch (err) {
         console.error("Error fetching researchers or works_in:", err);
       }

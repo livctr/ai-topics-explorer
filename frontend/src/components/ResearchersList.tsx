@@ -7,7 +7,7 @@ export interface Researcher {
   url: string;
   homepage: string;
   affiliation: string;
-  pub_count: number;
+  // pub_count: number;
 }
 
 export interface WorksIn {

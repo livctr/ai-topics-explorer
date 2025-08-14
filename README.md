@@ -32,9 +32,4 @@ python -m src.main \
 ```
 
 
-To start the app,
-
-```bash
-
-docker-compose up --build
-```
+Using Supabase and Vercel.
