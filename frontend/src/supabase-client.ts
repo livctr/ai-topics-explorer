@@ -66,7 +66,6 @@ export async function getTopics(researcherId?: number): Promise<Topic[]> {
     
     if (error) throw error;
 
-
     // Strip the join field
     return (data ?? []).map(({ id, name, parent_id, level, is_leaf }) => ({
       id,
