@@ -1,13 +1,12 @@
 import React, { useEffect, useState, useMemo } from "react";
 import TopicsTree from "./components/TopicsTree";
 import InfoPanel from "./components/InfoPanel";
-import { YEAR, BACKEND } from "./const";
+import { YEAR } from "./const";
 import "./App.css";
 import { Topic, TopicNode, buildTree } from "./types/Topic";
 import { Paper } from "./components/PapersList";
 
 import { getTopics, getPapers } from "./supabase-client";
-import SupabaseProbe from "./SupabaseProbe";
 
 const App: React.FC = () => {
   const [selectedTopic, setSelectedTopic] = useState<Topic>({
